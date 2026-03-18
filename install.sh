@@ -50,10 +50,10 @@ cat > "$HYPR_CONF" <<'HYPR'
 # ferris-sweep cheat sheet — floating window
 # Toggle with: Super + Shift + K
 
-windowrule = float,        match:class sweep-cheatsheet
-windowrule = size 880 650, match:class sweep-cheatsheet
-windowrule = center,       match:class sweep-cheatsheet
-windowrule = stayfocused,  match:class sweep-cheatsheet
+windowrule = float on,        match:class sweep-cheatsheet
+windowrule = size 880 650,    match:class sweep-cheatsheet
+windowrule = center on,       match:class sweep-cheatsheet
+windowrule = stay_focused on, match:class sweep-cheatsheet
 
 # Keybinding — Super+Shift+K  (K = Keyboard)
 bindd = SUPER SHIFT, K, Keyboard cheat sheet, exec, \
