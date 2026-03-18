@@ -33,13 +33,15 @@ python3 "$PROJ/sweep" generate
 
 # ── 4. Install python-rich (optional, for prettier output) ───────────────────
 if ! python3 -c "import rich" 2>/dev/null; then
-    if command -v yay &>/dev/null; then
+    if command -v yay &>/dev/null && [[ -t 0 ]]; then
         echo ""
         read -r -p "  Install python-rich for prettier output? [Y/n] " yn
         if [[ "$yn" != n && "$yn" != N ]]; then
             yay -S --noconfirm python-rich
             echo "  ✓ python-rich installed"
         fi
+    elif command -v yay &>/dev/null; then
+        echo "  ℹ  Optional: run 'yay -S python-rich' for even prettier output"
     fi
 fi
 
@@ -48,16 +50,16 @@ cat > "$HYPR_CONF" <<'HYPR'
 # ferris-sweep cheat sheet — floating window
 # Toggle with: Super + Shift + K
 
-windowrulev2 = float,       class:^(sweep-cheatsheet)$
-windowrulev2 = size 880 650, class:^(sweep-cheatsheet)$
-windowrulev2 = center,      class:^(sweep-cheatsheet)$
-windowrulev2 = stayfocused, class:^(sweep-cheatsheet)$
+windowrule = float,        match:class sweep-cheatsheet
+windowrule = size 880 650, match:class sweep-cheatsheet
+windowrule = center,       match:class sweep-cheatsheet
+windowrule = stayfocused,  match:class sweep-cheatsheet
 
 # Keybinding — Super+Shift+K  (K = Keyboard)
 bindd = SUPER SHIFT, K, Keyboard cheat sheet, exec, \
     ghostty --class=sweep-cheatsheet \
             --title="Ferris Sweep — Keyboard Layout" \
-            --command "sweep cheatsheet | less -R +g"
+            -e sweep cheatsheet
 HYPR
 
 echo "  ✓ Hyprland config → $HYPR_CONF"
