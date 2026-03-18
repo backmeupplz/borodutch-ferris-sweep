@@ -1,0 +1,739 @@
+#!/usr/bin/env python3
+"""
+sweep — Ferris Sweep keyboard layout manager
+
+Commands:
+  sweep show [LAYER]              Show layer diagram(s)
+  sweep list                      List all layers
+  sweep set LAYER ROW COL KEY     Set a specific key (ROW: 0-3, COL: 0-9/0-3)
+  sweep note LAYER TEXT           Set description/notes for a layer
+  sweep combos                    Show all combos
+  sweep generate                  Generate QMK keymap files from layout.json
+  sweep flash                     Compile + flash firmware (requires QMK CLI)
+  sweep cheatsheet                Full scrollable cheat sheet (for Omarchy popup)
+  sweep info                      Show project info and keyboard status
+"""
+
+import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+from textwrap import wrap
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ANSI colours (no external deps)
+# ─────────────────────────────────────────────────────────────────────────────
+
+NO_COLOR = not sys.stdout.isatty() or os.environ.get("NO_COLOR")
+
+
+def _c(*codes):
+    if NO_COLOR:
+        return ""
+    return "\033[" + ";".join(str(c) for c in codes) + "m"
+
+
+RST  = _c(0)
+BOLD = _c(1)
+DIM  = _c(2)
+RED  = _c(31)
+GRN  = _c(32)
+YEL  = _c(33)
+BLU  = _c(34)
+MAG  = _c(35)
+CYN  = _c(36)
+BGRN = _c(92)
+BYEL = _c(93)
+BBLU = _c(94)
+BMAG = _c(95)
+BCYN = _c(96)
+BWHT = _c(97)
+
+LAYER_COLORS = [BCYN, BGRN, BYEL, BMAG, BBLU, BWHT]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Paths
+# ─────────────────────────────────────────────────────────────────────────────
+
+PROJ = Path(__file__).parent.resolve()
+LAYOUT_FILE = PROJ / "layout.json"
+KEYMAP_DIR  = PROJ / "keymap"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# QMK keycode → human-readable display
+# ─────────────────────────────────────────────────────────────────────────────
+
+KC = {
+    # Alpha
+    "KC_Q": "Q",  "KC_W": "W",  "KC_F": "F",  "KC_P": "P",  "KC_B": "B",
+    "KC_J": "J",  "KC_L": "L",  "KC_U": "U",  "KC_Y": "Y",
+    "KC_A": "A",  "KC_R": "R",  "KC_S": "S",  "KC_T": "T",  "KC_G": "G",
+    "KC_M": "M",  "KC_N": "N",  "KC_E": "E",  "KC_I": "I",  "KC_O": "O",
+    "KC_Z": "Z",  "KC_X": "X",  "KC_C": "C",  "KC_D": "D",  "KC_V": "V",
+    "KC_K": "K",  "KC_H": "H",
+    # Punctuation
+    "KC_COMM": ",",  "KC_DOT": ".",  "KC_SLSH": "/",
+    "KC_QUOT": "'",  "KC_DQUO": '"', "KC_SCLN": ";",  "KC_COLN": ":",
+    # Control
+    "KC_SPC":  "Spc", "KC_ENT":  "Ent", "KC_BSPC": "Bsp", "KC_TAB": "Tab",
+    "KC_ESC":  "Esc", "KC_DEL":  "Del", "KC_INS":  "Ins",
+    # Symbols
+    "KC_LBRC": "[",  "KC_RBRC": "]",
+    "KC_LCBR": "{",  "KC_RCBR": "}",
+    "KC_LPRN": "(",  "KC_RPRN": ")",
+    "KC_MINS": "-",  "KC_EQL":  "=",   "KC_PLUS": "+",  "KC_UNDS": "_",
+    "KC_ASTR": "*",  "KC_DLR":  "$",   "KC_HASH": "#",  "KC_AT":   "@",
+    "KC_EXLM": "!",  "KC_QUES": "?",   "KC_TILD": "~",  "KC_GRV":  "`",
+    "KC_CIRC": "^",  "KC_AMPR": "&",   "KC_PIPE": "|",  "KC_BSLS": "\\",
+    "KC_LT":   "<",  "KC_GT":   ">",   "KC_PERC": "%",
+    # Navigation
+    "KC_LEFT": "←",  "KC_RGHT": "→",  "KC_UP":   "↑",  "KC_DOWN": "↓",
+    "KC_HOME": "Hom", "KC_END": "End", "KC_PGUP": "PgU", "KC_PGDN": "PgD",
+    # Modifiers (standalone)
+    "KC_LGUI": "⊞",  "KC_RGUI": "⊞",
+    "KC_LALT": "Alt", "KC_RALT": "Alt",
+    "KC_LCTL": "Ctl", "KC_RCTL": "Ctl",
+    "KC_LSFT": "Sft", "KC_RSFT": "Sft",
+    # Numbers
+    "KC_0": "0", "KC_1": "1", "KC_2": "2", "KC_3": "3", "KC_4": "4",
+    "KC_5": "5", "KC_6": "6", "KC_7": "7", "KC_8": "8", "KC_9": "9",
+    # Function
+    "KC_F1":  "F1",  "KC_F2":  "F2",  "KC_F3":  "F3",  "KC_F4":  "F4",
+    "KC_F5":  "F5",  "KC_F6":  "F6",  "KC_F7":  "F7",  "KC_F8":  "F8",
+    "KC_F9":  "F9",  "KC_F10": "F10", "KC_F11": "F11", "KC_F12": "F12",
+    # Media
+    "KC_MPLY": "▶",   "KC_MSTP": "■",  "KC_MPRV": "◀|", "KC_MNXT": "|▶",
+    "KC_VOLU": "Vol+", "KC_VOLD": "Vol-", "KC_MUTE": "Mute",
+    # RGB
+    "RGB_TOG": "RGB", "RGB_MOD": "Mod", "RGB_HUI": "Hue",
+    "RGB_SAI": "Sat", "RGB_VAI": "Bri",
+    # Special
+    "XXXXXXX":  "✗",   "_______":  "···", "KC_TRNS": "···",
+    "CW_TOGG":  "Cap", "QK_BOOT":  "Rst",
+}
+
+MOD_SYM = {
+    "LGUI": "⊞",   "RGUI": "⊞",
+    "LALT": "Alt", "RALT": "Alt",
+    "LCTL": "Ctl", "RCTL": "Ctl",
+    "LSFT": "Sft", "RSFT": "Sft",
+}
+
+MOD_LONG = {
+    "LGUI": "Super", "RGUI": "Super",
+    "LALT": "Alt",   "RALT": "Alt",
+    "LCTL": "Ctrl",  "RCTL": "Ctrl",
+    "LSFT": "Shift", "RSFT": "Shift",
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Key parser
+# ─────────────────────────────────────────────────────────────────────────────
+
+def parse_key(kc: str) -> dict:
+    """Parse any QMK keycode into {type, tap, sub}."""
+    kc = kc.strip()
+
+    if kc in ("_______", "KC_TRNS"):
+        return {"type": "trans", "tap": "···", "sub": ""}
+    if kc == "XXXXXXX":
+        return {"type": "noop", "tap": "✗", "sub": ""}
+
+    # HRM: LGUI_T(KC_X)
+    m = re.match(r"^(LGUI|RGUI|LALT|RALT|LCTL|RCTL|LSFT|RSFT)_T\((.+)\)$", kc)
+    if m:
+        mod, inner = m.groups()
+        tap = KC.get(inner.strip(), inner.strip().replace("KC_", "")[:4])
+        return {"type": "hrm", "tap": tap, "sub": MOD_SYM[mod]}
+
+    # Layer-tap: LT(LAYER, KC_X)
+    m = re.match(r"^LT\((\w+),\s*(.+)\)$", kc)
+    if m:
+        layer, inner = m.groups()
+        tap = KC.get(inner.strip(), inner.strip().replace("KC_", "")[:4])
+        return {"type": "lt", "tap": tap, "sub": layer[:3]}
+
+    # One-shot mod: OSM(MOD_LSFT)
+    m = re.match(r"^OSM\(MOD_(.+)\)$", kc)
+    if m:
+        mod = m.group(1)
+        d = {"LSFT": "Sft", "RSFT": "Sft", "LCTL": "Ctl", "RCTL": "Ctl",
+             "LALT": "Alt", "RALT": "Alt", "LGUI": "⊞",   "RGUI": "⊞"}
+        return {"type": "osm", "tap": d.get(mod, mod[:3]), "sub": "1sh"}
+
+    # One-shot layer: OSL(LAYER)
+    m = re.match(r"^OSL\((\w+)\)$", kc)
+    if m:
+        return {"type": "osl", "tap": m.group(1)[:3], "sub": "osl"}
+
+    # Basic
+    disp = KC.get(kc, kc.replace("KC_", "")[:4])
+    return {"type": "basic", "tap": disp, "sub": ""}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Rendering helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+KEY_W = 4   # visual width of each key cell
+HALF  = 5   # keys per hand
+
+def _ctr(s: str, w: int = KEY_W) -> str:
+    """Center plain string in w chars (no ANSI)."""
+    s = str(s)[:w]
+    pad = w - len(s)
+    return " " * (pad // 2) + s + " " * (pad - pad // 2)
+
+
+def _colored_key(kc: str):
+    """Return (tap_line, sub_line) both w=KEY_W with ANSI colour."""
+    p   = parse_key(kc)
+    tap = _ctr(p["tap"])
+    sub = _ctr(p["sub"])
+
+    if p["type"] == "hrm":
+        return CYN + tap + RST, YEL + sub + RST
+    if p["type"] == "lt":
+        return BGRN + tap + RST, GRN + sub + RST
+    if p["type"] == "trans":
+        return DIM + tap + RST, " " * KEY_W
+    if p["type"] == "noop":
+        return DIM + RED + tap + RST, " " * KEY_W
+    if p["type"] in ("osm", "osl"):
+        return BMAG + tap + RST, MAG + sub + RST
+    return tap, DIM + sub + RST if p["sub"] else " " * KEY_W
+
+
+SEP = DIM + "┃" + RST
+
+
+def _render_alpha_row(keys):
+    left  = keys[:HALF]
+    right = keys[HALF : HALF * 2]
+    pairs = [_colored_key(k) for k in left + right]
+    l1 = " ".join(p[0] for p in pairs[:HALF]) + "   " + SEP + "   " + " ".join(p[0] for p in pairs[HALF:])
+    l2 = " ".join(p[1] for p in pairs[:HALF]) + "   " + SEP + "   " + " ".join(p[1] for p in pairs[HALF:])
+    return l1, l2
+
+
+def _render_thumb_row(thumbs):
+    left_t  = thumbs[:2]
+    right_t = thumbs[2:4]
+    pairs   = [_colored_key(k) for k in left_t + right_t]
+    # Indent to align under alpha cols 3-4 and 5-6
+    indent  = " " * (HALF * (KEY_W + 1) - KEY_W - 1)
+    l1 = indent + " ".join(p[0] for p in pairs[:2]) + "   " + SEP + "   " + " ".join(p[0] for p in pairs[2:])
+    l2 = indent + " ".join(p[1] for p in pairs[:2]) + "   " + SEP + "   " + " ".join(p[1] for p in pairs[2:])
+    return l1, l2
+
+
+def render_layer(layer: dict, idx: int, total: int) -> str:
+    rows  = layer["rows"]
+    name  = layer["name"]
+    desc  = layer.get("description", "")
+    color = LAYER_COLORS[idx % len(LAYER_COLORS)]
+    W     = 61
+
+    out = []
+    out.append("")
+    out.append(f"{color}{BOLD}{'═' * W}{RST}")
+    out.append(f"{color}{BOLD}  {name}  {DIM}({idx + 1}/{total}){RST}")
+    if desc:
+        out.append(f"{DIM}  {desc}{RST}")
+    out.append(f"{color}{'─' * W}{RST}")
+
+    alpha_rows = rows[:3]
+    thumbs     = rows[3] if len(rows) > 3 else []
+
+    for row in alpha_rows:
+        l1, l2 = _render_alpha_row(row)
+        out.append(f"  {l1}")
+        out.append(f"  {l2}")
+
+    if thumbs:
+        out.append("")
+        l1, l2 = _render_thumb_row(thumbs)
+        out.append(f"  {l1}")
+        out.append(f"  {l2}")
+
+    # HRM legend
+    home = rows[1] if len(rows) > 1 else []
+    hrms = [(i, k) for i, k in enumerate(home) if "_T(" in k]
+    if hrms:
+        out.append("")
+        def _hrm_fmt(kc):
+            m = re.match(r"^(LGUI|RGUI|LALT|RALT|LCTL|RCTL|LSFT|RSFT)_T\((.+)\)$", kc)
+            if m:
+                mod, inner = m.groups()
+                letter = KC.get(inner.strip(), inner.strip().replace("KC_", ""))
+                return f"{CYN}{letter}{RST}={YEL}{MOD_LONG[mod]}{RST}"
+            return kc
+        left_h  = [(i, k) for i, k in hrms if i < HALF]
+        right_h = [(i, k) for i, k in hrms if i >= HALF]
+        if left_h:
+            out.append(f"  {DIM}HRM L:{RST} " + "  ".join(_hrm_fmt(k) for _, k in left_h))
+        if right_h:
+            out.append(f"  {DIM}HRM R:{RST} " + "  ".join(_hrm_fmt(k) for _, k in right_h))
+
+    # Notes
+    notes = layer.get("notes", [])
+    if notes:
+        out.append(f"  {DIM}{'─' * (W - 2)}{RST}")
+        for note in notes:
+            out.append(f"  {DIM}• {note}{RST}")
+
+    out.append(f"{color}{'═' * W}{RST}")
+    return "\n".join(out)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Layout I/O
+# ─────────────────────────────────────────────────────────────────────────────
+
+def load() -> dict:
+    if not LAYOUT_FILE.exists():
+        sys.exit(f"layout.json not found at {LAYOUT_FILE}")
+    with open(LAYOUT_FILE) as f:
+        return json.load(f)
+
+
+def save(layout: dict):
+    with open(LAYOUT_FILE, "w") as f:
+        json.dump(layout, f, indent=2)
+    print(f"{GRN}✓{RST} layout.json saved — run {BOLD}sweep generate{RST} to update QMK files")
+
+
+def find_layer(layout, ref) -> tuple:
+    """Find layer by name or index. Returns (idx, layer)."""
+    layers = layout["layers"]
+    try:
+        idx = int(ref)
+        if 0 <= idx < len(layers):
+            return idx, layers[idx]
+    except (ValueError, TypeError):
+        pass
+    for i, lay in enumerate(layers):
+        if lay["name"].upper() == str(ref).upper():
+            return i, lay
+    sys.exit(f"Layer '{ref}' not found. Use 'sweep list' to see available layers.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# QMK code generation
+# ─────────────────────────────────────────────────────────────────────────────
+
+def generate_keymap(layout: dict):
+    """Generate keymap/ directory files from layout.json."""
+    KEYMAP_DIR.mkdir(exist_ok=True)
+
+    layers  = layout["layers"]
+    combos  = layout.get("combos", [])
+    cfg     = layout.get("config", {})
+    ko_list = layout.get("key_overrides", [])
+
+    enum_names = [l["name"] for l in layers]
+
+    # ── keymap.c ──────────────────────────────────────────────────────────────
+    kc_lines = [
+        "// AUTO-GENERATED by sweep — edit layout.json then run: sweep generate",
+        "#include QMK_KEYBOARD_H",
+        "",
+        "// ─── Layer indices ──────────────────────────────────────────────────",
+        "enum layers {",
+    ]
+    for name in enum_names:
+        kc_lines.append(f"    {name},")
+    kc_lines.append("};")
+    kc_lines.append("")
+
+    # Combo declarations
+    if combos:
+        kc_lines.append("// ─── Combos ─────────────────────────────────────────────────────────")
+        for c in combos:
+            keys_str = ", ".join(c["keys"]) + ", COMBO_END"
+            kc_lines.append(f'const uint16_t PROGMEM {c["name"]}[] = {{{keys_str}}};')
+        kc_lines.append("")
+        kc_lines.append("combo_t key_combos[] = {")
+        for c in combos:
+            desc = c.get("description", "")
+            kc_lines.append(f'    COMBO({c["name"]}, {c["result"]}),  // {desc}')
+        kc_lines.append("};")
+        kc_lines.append("")
+
+    # Key overrides
+    if ko_list:
+        kc_lines.append("// ─── Key overrides ──────────────────────────────────────────────────")
+        for ko in ko_list:
+            var  = re.sub(r"[^a-z0-9]", "_", ko["trigger"].lower()) + "_ko"
+            desc = ko.get("description", "")
+            kc_lines.append(f'const key_override_t {var} = ko_make_basic({ko["modifier"]}, {ko["trigger"]}, {ko["result"]});  // {desc}')
+        kc_lines.append("")
+        kc_lines.append("const key_override_t *key_overrides[] = {")
+        for ko in ko_list:
+            var = re.sub(r"[^a-z0-9]", "_", ko["trigger"].lower()) + "_ko"
+            kc_lines.append(f"    &{var},")
+        kc_lines.append("    NULL")
+        kc_lines.append("};")
+        kc_lines.append("")
+
+    # Keymaps
+    kc_lines.append("// ─── Keymaps ────────────────────────────────────────────────────────")
+    kc_lines.append("const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {")
+    kc_lines.append("")
+    lmacro = layout["meta"]["layout_macro"]
+
+    for lay in layers:
+        name = lay["name"]
+        rows = lay["rows"]
+        flat = []
+        for row in rows:
+            flat.extend(row)
+        kc_lines.append(f"[{name}] = {lmacro}(")
+        # Format in rows of 10 (alpha) then 4 (thumbs)
+        alpha = flat[:30]
+        thumbs = flat[30:]
+        for i in range(0, 30, 10):
+            row_keys = alpha[i:i+10]
+            sep = "," if (i < 20 or thumbs) else ""
+            kc_lines.append("    " + ", ".join(row_keys) + ("," if i < 20 else ("," if thumbs else "")))
+        if thumbs:
+            kc_lines.append("    " + ", ".join(thumbs))
+        kc_lines.append("),")
+        kc_lines.append("")
+
+    kc_lines.append("};")
+    kc_lines.append("")
+
+    # Per-key tapping term
+    hrm_keys = []
+    for lay in layers:
+        if lay["name"] == "BASE":
+            for row in lay["rows"][:3]:
+                for kc in row:
+                    m = re.match(r"^(LGUI|RGUI|LALT|RALT|LCTL|RCTL|LSFT|RSFT)_T\((.+)\)$", kc)
+                    if m:
+                        mod, inner = m.groups()
+                        hrm_keys.append((kc, mod, inner))
+            break
+
+    if hrm_keys:
+        kc_lines.append("// ─── Per-key tapping term ───────────────────────────────────────────")
+        kc_lines.append("uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {")
+        kc_lines.append("    switch (keycode) {")
+        pinky = [k for k in hrm_keys if k[1] in ("LGUI", "RGUI")]
+        index = [k for k in hrm_keys if k[1] in ("LSFT", "RSFT")]
+        if pinky:
+            for kc, _, _ in pinky:
+                kc_lines.append(f"        case {kc}:  // pinky — slower")
+            kc_lines.append(f"            return TAPPING_TERM + 50;  // {cfg.get('tapping_term', 200) + 50}ms")
+        if index:
+            for kc, _, _ in index:
+                kc_lines.append(f"        case {kc}:  // index — faster")
+            kc_lines.append(f"            return TAPPING_TERM - 20;  // {cfg.get('tapping_term', 200) - 20}ms")
+        kc_lines.append("        default:")
+        kc_lines.append("            return TAPPING_TERM;")
+        kc_lines.append("    }")
+        kc_lines.append("}")
+        kc_lines.append("")
+
+    (KEYMAP_DIR / "keymap.c").write_text("\n".join(kc_lines))
+
+    # ── config.h ──────────────────────────────────────────────────────────────
+    tt  = cfg.get("tapping_term", 200)
+    qtt = cfg.get("quick_tap_term", 0)
+    ct  = cfg.get("combo_term", 50)
+
+    config_h = f"""\
+// AUTO-GENERATED by sweep — edit layout.json then run: sweep generate
+#pragma once
+
+// Tapping term — start at {tt}ms, tune ±25ms if HRMs misfire / feel sluggish
+#define TAPPING_TERM {tt}
+
+// Zero QUICK_TAP disables double-tap auto-repeat (prevents "aaaa" HRM misfires)
+#define QUICK_TAP_TERM {qtt}
+
+// Combo detection window
+#define COMBO_TERM {ct}
+
+// DO NOT enable HOLD_ON_OTHER_KEY_PRESS — destroys HRM usability
+// DO NOT enable PERMISSIVE_HOLD globally — causes misfires on key rolls
+"""
+    (KEYMAP_DIR / "config.h").write_text(config_h)
+
+    # ── rules.mk ──────────────────────────────────────────────────────────────
+    rules_mk_lines = [
+        "# AUTO-GENERATED by sweep — edit layout.json then run: sweep generate",
+        "",
+        "COMBO_ENABLE        = yes",
+        "CAPS_WORD_ENABLE    = yes",
+        "TRI_LAYER_ENABLE    = yes   # hold NAV + SYM simultaneously → NUM layer",
+    ]
+    if ko_list:
+        rules_mk_lines.append("KEY_OVERRIDE_ENABLE = yes")
+    rules_mk_lines += [
+        "",
+        "# Optional — enable if needed:",
+        "# TAP_DANCE_ENABLE  = yes   # adds tapping_term latency per key — avoid unless needed",
+        "# MOUSEKEY_ENABLE   = yes",
+    ]
+    (KEYMAP_DIR / "rules.mk").write_text("\n".join(rules_mk_lines) + "\n")
+
+    print(f"{GRN}✓{RST} Generated:")
+    print(f"  {KEYMAP_DIR}/keymap.c")
+    print(f"  {KEYMAP_DIR}/config.h")
+    print(f"  {KEYMAP_DIR}/rules.mk")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Commands
+# ─────────────────────────────────────────────────────────────────────────────
+
+def cmd_list(args):
+    layout = load()
+    layers = layout["layers"]
+    print(f"\n{BOLD}Layers ({len(layers)}){RST}\n")
+    for i, lay in enumerate(layers):
+        color = LAYER_COLORS[i % len(LAYER_COLORS)]
+        desc  = lay.get("description", "")
+        print(f"  {color}{BOLD}{i}{RST}  {color}{lay['name']:<8}{RST}  {DIM}{desc}{RST}")
+    print()
+
+
+def cmd_show(args):
+    layout = load()
+    layers = layout["layers"]
+    total  = len(layers)
+
+    if args.layer is not None:
+        idx, lay = find_layer(layout, args.layer)
+        print(render_layer(lay, idx, total))
+    else:
+        for i, lay in enumerate(layers):
+            print(render_layer(lay, i, total))
+
+
+def cmd_set(args):
+    layout = load()
+    _, lay = find_layer(layout, args.layer)
+
+    row = int(args.row)
+    col = int(args.col)
+
+    if row < 0 or row > 3:
+        sys.exit("ROW must be 0-3 (0=top, 1=home, 2=bottom, 3=thumbs)")
+
+    rows = lay["rows"]
+    if row >= len(rows):
+        sys.exit(f"Layer {lay['name']} only has {len(rows)} rows")
+
+    max_col = 3 if row == 3 else 9
+    if col < 0 or col > max_col:
+        sys.exit(f"COL for row {row} must be 0-{max_col}")
+
+    old = rows[row][col]
+    rows[row][col] = args.keycode
+
+    print(f"{GRN}✓{RST} {lay['name']}  row {row}  col {col}:  {DIM}{old}{RST}  →  {BOLD}{args.keycode}{RST}")
+    save(layout)
+
+
+def cmd_note(args):
+    layout = load()
+    _, lay = find_layer(layout, args.layer)
+    lay["description"] = args.text
+    print(f"{GRN}✓{RST} {lay['name']} description updated")
+    save(layout)
+
+
+def cmd_combos(args):
+    layout = load()
+    combos = layout.get("combos", [])
+    if not combos:
+        print("No combos defined.")
+        return
+    print(f"\n{BOLD}Combos ({len(combos)}){RST}\n")
+    for i, c in enumerate(combos):
+        keys_disp = " + ".join(
+            CYN + parse_key(k)["tap"] + RST for k in c["keys"]
+        )
+        result = BYEL + parse_key(c["result"])["tap"] + RST
+        desc   = c.get("description", "")
+        print(f"  {DIM}{i}{RST}  {keys_disp}  →  {result}  {DIM}{desc}{RST}")
+    print()
+
+
+def cmd_generate(args):
+    layout = load()
+    generate_keymap(layout)
+
+
+def cmd_flash(args):
+    """Compile and flash using QMK CLI."""
+    layout  = load()
+    kb      = layout["meta"]["keyboard"]
+    km_path = str(KEYMAP_DIR)
+
+    # Try to find qmk
+    qmk = "qmk"
+    if subprocess.run(["which", qmk], capture_output=True).returncode != 0:
+        sys.exit(
+            f"{RED}✗{RST} qmk not found. Install with:\n"
+            "  yay -S qmk\n"
+            "  or follow https://docs.qmk.fm/#/newbs_getting_started"
+        )
+
+    # First generate fresh files
+    generate_keymap(layout)
+
+    print(f"\n{BOLD}Flashing {kb}…{RST}")
+    print(f"{DIM}Put keyboard in bootloader mode (QK_BOOT key or double-tap reset){RST}\n")
+
+    result = subprocess.run(
+        [qmk, "flash", "-kb", kb, "-km", "sweep_layout", "-e", f"KEYMAP_PATH={km_path}"],
+        cwd=str(PROJ),
+    )
+    if result.returncode != 0:
+        sys.exit(f"\n{RED}✗{RST} Flash failed (exit {result.returncode})")
+    print(f"\n{GRN}✓{RST} Flash complete!")
+
+
+def cmd_cheatsheet(args):
+    """Full cheat sheet — used by Omarchy popup (sweep cheatsheet)."""
+    layout = load()
+    layers = layout["layers"]
+    combos = layout.get("combos", [])
+    total  = len(layers)
+
+    # Header
+    print(f"\n{BCYN}{BOLD}  Ferris Sweep — Keyboard Layout Cheat Sheet  {RST}")
+    print(f"{DIM}  {layout['meta']['description']}{RST}")
+
+    for i, lay in enumerate(layers):
+        print(render_layer(lay, i, total))
+
+    # Combos section
+    if combos:
+        W = 61
+        print(f"\n{BYEL}{BOLD}{'═' * W}{RST}")
+        print(f"{BYEL}{BOLD}  COMBOS (press simultaneously){RST}")
+        print(f"{BYEL}{'─' * W}{RST}")
+        for c in combos:
+            keys_disp = " + ".join(
+                CYN + _ctr(parse_key(k)["tap"]) + RST for k in c["keys"]
+            )
+            result = BGRN + _ctr(parse_key(c["result"])["tap"]) + RST
+            desc   = c.get("description", "")
+            print(f"  {keys_disp}  →  {result}  {DIM}{desc}{RST}")
+        print(f"{BYEL}{'═' * W}{RST}")
+
+    # Legend
+    print(f"\n{DIM}  Legend:{RST}")
+    print(f"  {CYN}key{RST}  HRM tap  {YEL}sub{RST}  HRM hold (home row mod)")
+    print(f"  {BGRN}key{RST}  Layer-tap  {GRN}sub{RST}  Layer on hold")
+    print(f"  {DIM}···{RST}  Transparent (fall through to lower layer)")
+    print(f"  {DIM}{RED}✗{RST}  No key (blocked)")
+    print()
+
+
+def cmd_info(args):
+    layout = load()
+    meta   = layout["meta"]
+    cfg    = layout.get("config", {})
+    print(f"\n{BOLD}Ferris Sweep Layout Manager{RST}\n")
+    print(f"  Keyboard:     {BCYN}{meta['keyboard']}{RST}")
+    print(f"  Layout macro: {meta['layout_macro']}")
+    print(f"  Layers:       {len(layout['layers'])}")
+    print(f"  Combos:       {len(layout.get('combos', []))}")
+    print(f"  Tapping term: {cfg.get('tapping_term', 200)}ms")
+    print(f"  Quick tap:    {cfg.get('quick_tap_term', 0)}ms")
+    print(f"\n  {DIM}layout.json → {LAYOUT_FILE}{RST}")
+    print(f"  {DIM}keymap/     → {KEYMAP_DIR}{RST}")
+    print()
+
+    # Check if keyboard is connected
+    result = subprocess.run(
+        ["ls", "/dev/input/by-id/"], capture_output=True, text=True
+    )
+    sweep_devices = [l for l in result.stdout.splitlines() if "sweep" in l.lower() or "ferris" in l.lower()]
+    if sweep_devices:
+        print(f"  {GRN}●{RST} Keyboard detected:")
+        for d in sweep_devices:
+            print(f"    {d}")
+    else:
+        print(f"  {DIM}○{RST} No Ferris Sweep detected in /dev/input/by-id/")
+    print()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Entry point
+# ─────────────────────────────────────────────────────────────────────────────
+
+def main():
+    p = argparse.ArgumentParser(
+        prog="sweep",
+        description="Ferris Sweep keyboard layout manager",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__.strip(),
+    )
+    sub = p.add_subparsers(dest="cmd", metavar="COMMAND")
+
+    # list
+    sub.add_parser("list", help="List all layers")
+
+    # show
+    sp = sub.add_parser("show", help="Show layer diagram(s)")
+    sp.add_argument("layer", nargs="?", help="Layer name or index (omit for all)")
+
+    # set
+    sp = sub.add_parser("set", help="Set a specific key")
+    sp.add_argument("layer",   help="Layer name or index")
+    sp.add_argument("row",     help="Row (0=top 1=home 2=bottom 3=thumbs)")
+    sp.add_argument("col",     help="Column (0-9 for alpha rows, 0-3 for thumbs)")
+    sp.add_argument("keycode", help="QMK keycode (e.g. KC_ESC, LGUI_T(KC_A), LT(NAV,KC_SPC))")
+
+    # note
+    sp = sub.add_parser("note", help="Update a layer description")
+    sp.add_argument("layer", help="Layer name or index")
+    sp.add_argument("text",  help="New description text")
+
+    # combos
+    sub.add_parser("combos", help="Show all combos")
+
+    # generate
+    sub.add_parser("generate", help="Generate QMK keymap files from layout.json")
+
+    # flash
+    sub.add_parser("flash", help="Compile and flash firmware (requires QMK CLI)")
+
+    # cheatsheet
+    sub.add_parser("cheatsheet", help="Full cheat sheet (used by Omarchy popup)")
+
+    # info
+    sub.add_parser("info", help="Project info + keyboard connection status")
+
+    args = p.parse_args()
+
+    dispatch = {
+        "list":       cmd_list,
+        "show":       cmd_show,
+        "set":        cmd_set,
+        "note":       cmd_note,
+        "combos":     cmd_combos,
+        "generate":   cmd_generate,
+        "flash":      cmd_flash,
+        "cheatsheet": cmd_cheatsheet,
+        "info":       cmd_info,
+    }
+
+    if args.cmd in dispatch:
+        dispatch[args.cmd](args)
+    else:
+        p.print_help()
+
+
+if __name__ == "__main__":
+    main()

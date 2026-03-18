@@ -1,0 +1,146 @@
+{
+  "meta": {
+    "keyboard": "ferris/sweep",
+    "layout_macro": "LAYOUT_split_3x5_2",
+    "description": "Colemak-DH + Home Row Mods for Neovim / Omarchy / AI prompting",
+    "author": "backmeupplz",
+    "version": "1.0.0"
+  },
+  "config": {
+    "tapping_term": 200,
+    "quick_tap_term": 0,
+    "combo_term": 50,
+    "permissive_hold": false,
+    "hold_on_other_key_press": false
+  },
+  "layers": [
+    {
+      "name": "BASE",
+      "description": "Colemak-DH + Home Row Mods — GACS order (Super/Alt/Ctrl/Shift)",
+      "notes": [
+        "GACS = GUI(Super) · Alt · Ctrl · Shift on pinky→index",
+        "Super on pinky is optimal for Hyprland SUPER+key shortcuts",
+        "Use LALT everywhere (not RALT) — RALT = AltGr on Linux"
+      ],
+      "rows": [
+        ["KC_Q",         "KC_W",         "KC_F",         "KC_P",         "KC_B",    "KC_J",  "KC_L",         "KC_U",         "KC_Y",         "KC_QUOT"],
+        ["LGUI_T(KC_A)", "LALT_T(KC_R)", "LCTL_T(KC_S)", "LSFT_T(KC_T)", "KC_G",    "KC_M",  "RSFT_T(KC_N)", "RCTL_T(KC_E)", "LALT_T(KC_I)", "RGUI_T(KC_O)"],
+        ["KC_Z",         "KC_X",         "KC_C",         "KC_D",         "KC_V",    "KC_K",  "KC_H",         "KC_COMM",      "KC_DOT",       "KC_SLSH"],
+        ["LT(MED,KC_TAB)", "LT(NAV,KC_SPC)", "LT(SYM,KC_ENT)", "LT(NUM,KC_BSPC)"]
+      ]
+    },
+    {
+      "name": "NAV",
+      "description": "Navigation — vi-style arrows, modifiers on home row",
+      "notes": [
+        "Left hand: modifiers mirrored (hold for combos with right hand nav)",
+        "Right hand: arrows in hjkl position (same fingers as Colemak h/n/e/i)",
+        "Activated by holding Space (left thumb inner)"
+      ],
+      "rows": [
+        ["XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "KC_PGUP", "KC_HOME", "KC_UP",   "KC_END",  "KC_DEL"],
+        ["KC_LGUI",  "KC_LALT",  "KC_LCTL",  "KC_LSFT",  "XXXXXXX",  "KC_PGDN", "KC_LEFT", "KC_DOWN", "KC_RGHT", "KC_BSPC"],
+        ["XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "KC_INS",  "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX"],
+        ["_______",  "_______",  "KC_ENT",   "_______"]
+      ]
+    },
+    {
+      "name": "SYM",
+      "description": "Symbols — brackets paired L/R, coding + AI prompt optimised",
+      "notes": [
+        "Opening brackets on left hand, closing on right — natural pairing",
+        "ESC top-left corner — critical for Neovim normal mode",
+        "Backtick top-right — markdown code blocks for AI prompts",
+        "Hash/Bang/At prominent for shell, markdown, regex",
+        "Activated by holding Enter (right thumb inner)"
+      ],
+      "rows": [
+        ["KC_ESC",  "KC_LBRC", "KC_LCBR", "KC_LPRN", "KC_TILD",  "KC_CIRC", "KC_RPRN", "KC_RCBR", "KC_RBRC", "KC_GRV"],
+        ["KC_MINS", "KC_ASTR", "KC_EQL",  "KC_UNDS", "KC_DLR",   "KC_HASH", "KC_EXLM", "KC_AT",   "KC_SLSH", "KC_QUES"],
+        ["KC_PLUS", "KC_PIPE", "KC_LT",   "KC_GT",   "KC_PERC",  "KC_BSLS", "KC_AMPR", "KC_SCLN", "KC_COLN", "KC_DQUO"],
+        ["_______", "KC_SPC",  "_______", "_______"]
+      ]
+    },
+    {
+      "name": "NUM",
+      "description": "Numbers + Function keys — numpad style, odd L / even R",
+      "notes": [
+        "Odd numbers on left, even on right — easier to learn than straight 1-9",
+        "Function keys mirror numerals on bottom row",
+        "Activated by holding Backspace (right thumb outer)",
+        "Also accessible: hold both NAV+SYM thumbs (tri-layer)"
+      ],
+      "rows": [
+        ["KC_7",    "KC_5",    "KC_3",    "KC_1",    "KC_9",     "KC_8",    "KC_0",    "KC_2",    "KC_4",    "KC_6"],
+        ["KC_LGUI", "KC_LALT", "KC_LCTL", "KC_LSFT", "KC_F11",   "KC_F10",  "KC_RSFT", "KC_RCTL", "KC_LALT", "KC_RGUI"],
+        ["KC_F7",   "KC_F5",   "KC_F3",   "KC_F1",   "KC_F9",    "KC_F8",   "KC_F12",  "KC_F2",   "KC_F4",   "KC_F6"],
+        ["_______", "_______", "_______", "_______"]
+      ]
+    },
+    {
+      "name": "MED",
+      "description": "Media + System — playback, volume, RGB, reset",
+      "notes": [
+        "Activated by holding Tab (left thumb outer)",
+        "QK_BOOT: put keyboard in bootloader mode for flashing"
+      ],
+      "rows": [
+        ["QK_BOOT",  "XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "RGB_TOG", "RGB_MOD", "RGB_HUI", "RGB_SAI", "RGB_VAI"],
+        ["XXXXXXX",  "KC_MPRV",  "KC_VOLD",  "KC_VOLU",  "KC_MNXT",  "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX"],
+        ["XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX"],
+        ["_______",  "KC_MPLY",  "KC_MSTP",  "KC_MUTE"]
+      ]
+    }
+  ],
+  "combos": [
+    {
+      "name": "jk_esc",
+      "keys": ["KC_J", "KC_K"],
+      "result": "KC_ESC",
+      "description": "jk → Escape (Neovim muscle memory)",
+      "layer": "BASE"
+    },
+    {
+      "name": "nm_coln",
+      "keys": ["RSFT_T(KC_N)", "KC_M"],
+      "result": "KC_COLN",
+      "description": "nm → Colon (fast Neovim command mode)",
+      "layer": "BASE"
+    },
+    {
+      "name": "ui_del",
+      "keys": ["KC_U", "KC_I"],
+      "result": "KC_DEL",
+      "description": "ui → Delete",
+      "layer": "BASE"
+    },
+    {
+      "name": "lq_capsword",
+      "keys": ["KC_L", "KC_QUOT"],
+      "result": "CW_TOGG",
+      "description": "l' → Caps Word toggle (smarter than Caps Lock)",
+      "layer": "BASE"
+    },
+    {
+      "name": "df_tab",
+      "keys": ["KC_D", "KC_F"],
+      "result": "KC_TAB",
+      "description": "df → Tab (left hand only, useful in terminal)",
+      "layer": "BASE"
+    }
+  ],
+  "key_overrides": [
+    {
+      "trigger": "KC_COMM",
+      "modifier": "MOD_MASK_SHIFT",
+      "result": "KC_SCLN",
+      "description": "Shift+, → ; (recover semicolon)"
+    },
+    {
+      "trigger": "KC_DOT",
+      "modifier": "MOD_MASK_SHIFT",
+      "result": "KC_COLN",
+      "description": "Shift+. → : (recover colon, alternative to combo)"
+    }
+  ]
+}
