@@ -10,5 +10,11 @@
 // Combo detection window
 #define COMBO_TERM 50
 
+// VIA support: allow all 6 layers
+#define DYNAMIC_KEYMAP_LAYER_COUNT 6
+
 // DO NOT enable HOLD_ON_OTHER_KEY_PRESS — destroys HRM usability
 // DO NOT enable PERMISSIVE_HOLD globally — causes misfires on key rolls
+
+// Split serial pin for the GP0 rewire
+#define SERIAL_USART_TX_PIN GP0

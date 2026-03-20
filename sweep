@@ -23,9 +23,9 @@ import sys
 from pathlib import Path
 from textwrap import wrap
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # ANSI colours (no external deps)
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 NO_COLOR = not sys.stdout.isatty() or os.environ.get("NO_COLOR")
 
@@ -54,29 +54,29 @@ BWHT = _c(97)
 
 LAYER_COLORS = [BCYN, BGRN, BYEL, BMAG, BBLU, BWHT]
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # Paths
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
-PROJ = Path(__file__).parent.resolve()
+PROJ = Path(os.path.realpath(__file__)).parent
 LAYOUT_FILE = PROJ / "layout.json"
 KEYMAP_DIR  = PROJ / "keymap"
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # QMK keycode → human-readable display
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 KC = {
-    # Alpha
-    "KC_Q": "Q",  "KC_W": "W",  "KC_F": "F",  "KC_P": "P",  "KC_B": "B",
-    "KC_J": "J",  "KC_L": "L",  "KC_U": "U",  "KC_Y": "Y",
-    "KC_A": "A",  "KC_R": "R",  "KC_S": "S",  "KC_T": "T",  "KC_G": "G",
-    "KC_M": "M",  "KC_N": "N",  "KC_E": "E",  "KC_I": "I",  "KC_O": "O",
-    "KC_Z": "Z",  "KC_X": "X",  "KC_C": "C",  "KC_D": "D",  "KC_V": "V",
-    "KC_K": "K",  "KC_H": "H",
+    # Alpha — display Colemak output (QWERTY scancodes remapped by OS)
+    "KC_Q": "Q",  "KC_W": "W",  "KC_E": "F",  "KC_R": "P",  "KC_T": "G",
+    "KC_Y": "J",  "KC_U": "L",  "KC_I": "U",  "KC_O": "Y",  "KC_P": ";",
+    "KC_A": "A",  "KC_S": "R",  "KC_D": "S",  "KC_F": "T",  "KC_G": "D",
+    "KC_H": "H",  "KC_J": "N",  "KC_K": "E",  "KC_L": "I",  "KC_SCLN": "O",
+    "KC_Z": "Z",  "KC_X": "X",  "KC_C": "C",  "KC_V": "V",  "KC_B": "B",
+    "KC_N": "K",  "KC_M": "M",
     # Punctuation
     "KC_COMM": ",",  "KC_DOT": ".",  "KC_SLSH": "/",
-    "KC_QUOT": "'",  "KC_DQUO": '"', "KC_SCLN": ";",  "KC_COLN": ":",
+    "KC_QUOT": "'",  "KC_DQUO": '"', "KC_COLN": ":",
     # Control
     "KC_SPC":  "Spc", "KC_ENT":  "Ent", "KC_BSPC": "Bsp", "KC_TAB": "Tab",
     "KC_ESC":  "Esc", "KC_DEL":  "Del", "KC_INS":  "Ins",
@@ -90,10 +90,10 @@ KC = {
     "KC_CIRC": "^",  "KC_AMPR": "&",   "KC_PIPE": "|",  "KC_BSLS": "\\",
     "KC_LT":   "<",  "KC_GT":   ">",   "KC_PERC": "%",
     # Navigation
-    "KC_LEFT": "←",  "KC_RGHT": "→",  "KC_UP":   "↑",  "KC_DOWN": "↓",
+    "KC_LEFT": "<-",  "KC_RGHT": "->",  "KC_UP":  "Up",  "KC_DOWN": "Dn",
     "KC_HOME": "Hom", "KC_END": "End", "KC_PGUP": "PgU", "KC_PGDN": "PgD",
     # Modifiers (standalone)
-    "KC_LGUI": "⊞",  "KC_RGUI": "⊞",
+    "KC_LGUI": "Sup",  "KC_RGUI": "Sup",
     "KC_LALT": "Alt", "KC_RALT": "Alt",
     "KC_LCTL": "Ctl", "KC_RCTL": "Ctl",
     "KC_LSFT": "Sft", "KC_RSFT": "Sft",
@@ -105,18 +105,30 @@ KC = {
     "KC_F5":  "F5",  "KC_F6":  "F6",  "KC_F7":  "F7",  "KC_F8":  "F8",
     "KC_F9":  "F9",  "KC_F10": "F10", "KC_F11": "F11", "KC_F12": "F12",
     # Media
-    "KC_MPLY": "▶",   "KC_MSTP": "■",  "KC_MPRV": "◀|", "KC_MNXT": "|▶",
+    "KC_MPLY": "Play", "KC_MSTP": "Stop", "KC_MPRV": "Prev", "KC_MNXT": "Next",
     "KC_VOLU": "Vol+", "KC_VOLD": "Vol-", "KC_MUTE": "Mute",
     # RGB
     "RGB_TOG": "RGB", "RGB_MOD": "Mod", "RGB_HUI": "Hue",
     "RGB_SAI": "Sat", "RGB_VAI": "Bri",
+    # Mouse
+    "KC_MS_BTN1": "MB1", "KC_MS_BTN2": "MB2", "KC_MS_BTN3": "MB3",
+    "KC_MS_BTN4": "MB4", "KC_MS_BTN5": "MB5",
+    "MS_BTN1": "MB1", "MS_BTN2": "MB2", "MS_BTN3": "MB3",
+    "MS_BTN4": "MB4", "MS_BTN5": "MB5",
+    "KC_ACL0": "Slw",  "KC_ACL1": "Med",  "KC_ACL2": "Fst",
+    "KC_MS_UP": "MsU",  "KC_MS_DOWN": "MsD", "KC_MS_LEFT": "MsL", "KC_MS_RIGHT": "MsR",
+    "KC_WH_U": "WhU",   "KC_WH_D": "WhD",  "KC_WH_L": "WhL",  "KC_WH_R": "WhR",
     # Special
-    "XXXXXXX":  "✗",   "_______":  "···", "KC_TRNS": "···",
-    "CW_TOGG":  "Cap", "QK_BOOT":  "Rst",
+    "XXXXXXX":  "---",  "_______":  "___", "KC_TRNS": "___",
+    "______":   "___",  "MO(POINTER)": "PTR", "MO(SYSTEM)": "SYS",
+    "CW_TOGG":  "CpWd", "QK_BOOT": "Boot",
+    "DRGSCRL":  "Drag", "SNIPING": "Snpe",
+    "HK_D_MODE": "Drag", "HK_D_MODE_T": "Drag",
+    "S(KC_P)":  ":",
 }
 
 MOD_SYM = {
-    "LGUI": "⊞",   "RGUI": "⊞",
+    "LGUI": "Sup", "RGUI": "Sup",
     "LALT": "Alt", "RALT": "Alt",
     "LCTL": "Ctl", "RCTL": "Ctl",
     "LSFT": "Sft", "RSFT": "Sft",
@@ -129,18 +141,18 @@ MOD_LONG = {
     "LSFT": "Shift", "RSFT": "Shift",
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # Key parser
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def parse_key(kc: str) -> dict:
     """Parse any QMK keycode into {type, tap, sub}."""
     kc = kc.strip()
 
-    if kc in ("_______", "KC_TRNS"):
-        return {"type": "trans", "tap": "···", "sub": ""}
+    if kc.strip("_") == "" or kc == "KC_TRNS":
+        return {"type": "trans", "tap": "___", "sub": ""}
     if kc == "XXXXXXX":
-        return {"type": "noop", "tap": "✗", "sub": ""}
+        return {"type": "noop", "tap": "---", "sub": ""}
 
     # HRM: LGUI_T(KC_X)
     m = re.match(r"^(LGUI|RGUI|LALT|RALT|LCTL|RCTL|LSFT|RSFT)_T\((.+)\)$", kc)
@@ -161,25 +173,39 @@ def parse_key(kc: str) -> dict:
     if m:
         mod = m.group(1)
         d = {"LSFT": "Sft", "RSFT": "Sft", "LCTL": "Ctl", "RCTL": "Ctl",
-             "LALT": "Alt", "RALT": "Alt", "LGUI": "⊞",   "RGUI": "⊞"}
+             "LALT": "Alt", "RALT": "Alt", "LGUI": "Sup",  "RGUI": "Sup"}
         return {"type": "osm", "tap": d.get(mod, mod[:3]), "sub": "1sh"}
+
+    # Momentary layer: MO(LAYER)
+    m = re.match(r"^MO\((\w+)\)$", kc)
+    if m:
+        return {"type": "mo", "tap": m.group(1)[:4], "sub": "hold"}
 
     # One-shot layer: OSL(LAYER)
     m = re.match(r"^OSL\((\w+)\)$", kc)
     if m:
         return {"type": "osl", "tap": m.group(1)[:3], "sub": "osl"}
 
+    # Shifted key: S(KC_X)
+    m = re.match(r"^S\((.+)\)$", kc)
+    if m:
+        disp = KC.get(kc, KC.get(m.group(1), m.group(1).replace("KC_", "")[:4]))
+        return {"type": "basic", "tap": disp, "sub": ""}
+
     # Basic
     disp = KC.get(kc, kc.replace("KC_", "")[:4])
     return {"type": "basic", "tap": disp, "sub": ""}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # Rendering helpers
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
-KEY_W = 4   # visual width of each key cell
+KEY_W = 7   # visual width of each key cell (fits "Bsp/LO" etc)
 HALF  = 5   # keys per hand
+
+SEP = DIM + "|" + RST
+
 
 def _ctr(s: str, w: int = KEY_W) -> str:
     """Center plain string in w chars (no ANSI)."""
@@ -188,82 +214,128 @@ def _ctr(s: str, w: int = KEY_W) -> str:
     return " " * (pad // 2) + s + " " * (pad - pad // 2)
 
 
-def _colored_key(kc: str):
-    """Return (tap_line, sub_line) both w=KEY_W with ANSI colour."""
-    p   = parse_key(kc)
-    tap = _ctr(p["tap"])
-    sub = _ctr(p["sub"])
+def _is_trans(kc: str) -> bool:
+    return kc.strip("_") == "" or kc == "KC_TRNS"
 
+
+def _resolve_transparent(layers, layer_idx, row_idx, col_idx):
+    """Resolve transparent key to the BASE layer (layer 0).
+
+    With layer-tap activation, only the active layer + BASE are relevant.
+    Other layers aren't in the stack, so we skip straight to BASE.
+    """
+    base = layers[0]["rows"]
+    if row_idx < len(base) and col_idx < len(base[row_idx]):
+        k = base[row_idx][col_idx]
+        if not _is_trans(k):
+            return k
+    return "_______"
+
+
+def _compact_key(kc: str, inherited: bool = False) -> str:
+    """Return a single colored string of width KEY_W showing tap/hold."""
+    p = parse_key(kc)
+    tap = p["tap"]
+    sub = p["sub"]
+
+    if sub and sub.strip():
+        # Combine as "tap/sub" e.g. "Bsp/LOW"
+        combined = f"{tap}/{sub}"
+    else:
+        combined = tap
+
+    centered = _ctr(combined)
+
+    if inherited:
+        return DIM + centered + RST
     if p["type"] == "hrm":
-        return CYN + tap + RST, YEL + sub + RST
+        return CYN + centered + RST
     if p["type"] == "lt":
-        return BGRN + tap + RST, GRN + sub + RST
+        return BGRN + centered + RST
     if p["type"] == "trans":
-        return DIM + tap + RST, " " * KEY_W
+        return DIM + centered + RST
     if p["type"] == "noop":
-        return DIM + RED + tap + RST, " " * KEY_W
-    if p["type"] in ("osm", "osl"):
-        return BMAG + tap + RST, MAG + sub + RST
-    return tap, DIM + sub + RST if p["sub"] else " " * KEY_W
+        return DIM + RED + centered + RST
+    if p["type"] in ("osm", "osl", "mo"):
+        return BMAG + centered + RST
+    return centered
 
 
-SEP = DIM + "┃" + RST
-
-
-def _render_alpha_row(keys):
+def _render_row(keys, inherited=None):
+    if inherited is None:
+        inherited = [False] * len(keys)
     left  = keys[:HALF]
     right = keys[HALF : HALF * 2]
-    pairs = [_colored_key(k) for k in left + right]
-    l1 = " ".join(p[0] for p in pairs[:HALF]) + "   " + SEP + "   " + " ".join(p[0] for p in pairs[HALF:])
-    l2 = " ".join(p[1] for p in pairs[:HALF]) + "   " + SEP + "   " + " ".join(p[1] for p in pairs[HALF:])
-    return l1, l2
+    inh = inherited[:HALF] + inherited[HALF : HALF * 2]
+    all_keys = left + right
+    cells = [_compact_key(k, inherited=i) for k, i in zip(all_keys, inh)]
+    return " ".join(cells[:HALF]) + "  " + SEP + "  " + " ".join(cells[HALF:])
 
 
-def _render_thumb_row(thumbs):
+def _render_thumb(thumbs, inherited=None):
+    if inherited is None:
+        inherited = [False] * len(thumbs)
     left_t  = thumbs[:2]
     right_t = thumbs[2:4]
-    pairs   = [_colored_key(k) for k in left_t + right_t]
-    # Indent to align under alpha cols 3-4 and 5-6
-    indent  = " " * (HALF * (KEY_W + 1) - KEY_W - 1)
-    l1 = indent + " ".join(p[0] for p in pairs[:2]) + "   " + SEP + "   " + " ".join(p[0] for p in pairs[2:])
-    l2 = indent + " ".join(p[1] for p in pairs[:2]) + "   " + SEP + "   " + " ".join(p[1] for p in pairs[2:])
-    return l1, l2
+    inh = inherited[:2] + inherited[2:4]
+    all_keys = left_t + right_t
+    cells = [_compact_key(k, inherited=i) for k, i in zip(all_keys, inh)]
+    # Align | with alpha rows
+    # Alpha | is at: HALF*KEY_W + (HALF-1) + 2 = 5*7+4+2 = 41
+    # Thumb before |: indent + 2*KEY_W + 1 + 2 = indent + 17
+    alpha_sep_pos = HALF * KEY_W + (HALF - 1) + 2
+    thumb_before_sep = 2 * KEY_W + 1 + 2
+    indent = " " * (alpha_sep_pos - thumb_before_sep)
+    return indent + " ".join(cells[:2]) + "  " + SEP + "  " + " ".join(cells[2:])
 
 
-def render_layer(layer: dict, idx: int, total: int) -> str:
+def render_layer(layer: dict, idx: int, total: int, layers=None) -> str:
     rows  = layer["rows"]
     name  = layer["name"]
     desc  = layer.get("description", "")
     color = LAYER_COLORS[idx % len(LAYER_COLORS)]
     W     = 61
 
+    # Resolve transparent keys to the underlying key from layers below
+    resolved_rows = []
+    inherited_flags = []
+    for ri, row in enumerate(rows):
+        res_row = []
+        inh_row = []
+        for ci, k in enumerate(row):
+            if _is_trans(k) and layers and idx > 0:
+                resolved = _resolve_transparent(layers, idx, ri, ci)
+                res_row.append(resolved)
+                inh_row.append(True)
+            else:
+                res_row.append(k)
+                inh_row.append(False)
+        resolved_rows.append(res_row)
+        inherited_flags.append(inh_row)
+
     out = []
-    out.append("")
-    out.append(f"{color}{BOLD}{'═' * W}{RST}")
-    out.append(f"{color}{BOLD}  {name}  {DIM}({idx + 1}/{total}){RST}")
-    if desc:
-        out.append(f"{DIM}  {desc}{RST}")
-    out.append(f"{color}{'─' * W}{RST}")
+    header = f"{color}{BOLD}{name}{RST} {DIM}{desc}{RST}"
+    out.append(f"{color}{'-' * W}{RST}")
+    out.append(f"  {header}")
 
-    alpha_rows = rows[:3]
-    thumbs     = rows[3] if len(rows) > 3 else []
+    alpha_rows = resolved_rows[:3]
+    alpha_inh  = inherited_flags[:3]
+    thumbs     = resolved_rows[3] if len(resolved_rows) > 3 else []
+    thumbs_inh = inherited_flags[3] if len(inherited_flags) > 3 else []
 
-    for row in alpha_rows:
-        l1, l2 = _render_alpha_row(row)
-        out.append(f"  {l1}")
-        out.append(f"  {l2}")
+    for i, row in enumerate(alpha_rows):
+        out.append(f"  {_render_row(row, alpha_inh[i])}")
+        if i < len(alpha_rows) - 1:
+            out.append("")
 
     if thumbs:
         out.append("")
-        l1, l2 = _render_thumb_row(thumbs)
-        out.append(f"  {l1}")
-        out.append(f"  {l2}")
+        out.append(f"  {_render_thumb(thumbs, thumbs_inh)}")
 
-    # HRM legend
+    # HRM legend (inline, compact)
     home = rows[1] if len(rows) > 1 else []
     hrms = [(i, k) for i, k in enumerate(home) if "_T(" in k]
     if hrms:
-        out.append("")
         def _hrm_fmt(kc):
             m = re.match(r"^(LGUI|RGUI|LALT|RALT|LCTL|RCTL|LSFT|RSFT)_T\((.+)\)$", kc)
             if m:
@@ -271,27 +343,20 @@ def render_layer(layer: dict, idx: int, total: int) -> str:
                 letter = KC.get(inner.strip(), inner.strip().replace("KC_", ""))
                 return f"{CYN}{letter}{RST}={YEL}{MOD_LONG[mod]}{RST}"
             return kc
-        left_h  = [(i, k) for i, k in hrms if i < HALF]
-        right_h = [(i, k) for i, k in hrms if i >= HALF]
-        if left_h:
-            out.append(f"  {DIM}HRM L:{RST} " + "  ".join(_hrm_fmt(k) for _, k in left_h))
-        if right_h:
-            out.append(f"  {DIM}HRM R:{RST} " + "  ".join(_hrm_fmt(k) for _, k in right_h))
+        hrm_parts = [_hrm_fmt(k) for _, k in hrms]
+        out.append(f"  {DIM}hold:{RST} " + "  ".join(hrm_parts))
 
     # Notes
     notes = layer.get("notes", [])
-    if notes:
-        out.append(f"  {DIM}{'─' * (W - 2)}{RST}")
-        for note in notes:
-            out.append(f"  {DIM}• {note}{RST}")
+    for note in notes:
+        out.append(f"  {DIM}* {note}{RST}")
 
-    out.append(f"{color}{'═' * W}{RST}")
     return "\n".join(out)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # Layout I/O
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def load() -> dict:
     if not LAYOUT_FILE.exists():
@@ -321,9 +386,9 @@ def find_layer(layout, ref) -> tuple:
     sys.exit(f"Layer '{ref}' not found. Use 'sweep list' to see available layers.")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # QMK code generation
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def generate_keymap(layout: dict):
     """Generate keymap/ directory files from layout.json."""
@@ -336,12 +401,13 @@ def generate_keymap(layout: dict):
 
     enum_names = [l["name"] for l in layers]
 
-    # ── keymap.c ──────────────────────────────────────────────────────────────
+    # -- keymap.c --------------------------------------------------------------
     kc_lines = [
         "// AUTO-GENERATED by sweep — edit layout.json then run: sweep generate",
         "#include QMK_KEYBOARD_H",
+        '#include "users/holykeebs/holykeebs.h"',
         "",
-        "// ─── Layer indices ──────────────────────────────────────────────────",
+        "// --- Layer indices --------------------------------------------------",
         "enum layers {",
     ]
     for name in enum_names:
@@ -351,7 +417,7 @@ def generate_keymap(layout: dict):
 
     # Combo declarations
     if combos:
-        kc_lines.append("// ─── Combos ─────────────────────────────────────────────────────────")
+        kc_lines.append("// --- Combos ---------------------------------------------------------")
         for c in combos:
             keys_str = ", ".join(c["keys"]) + ", COMBO_END"
             kc_lines.append(f'const uint16_t PROGMEM {c["name"]}[] = {{{keys_str}}};')
@@ -365,7 +431,7 @@ def generate_keymap(layout: dict):
 
     # Key overrides
     if ko_list:
-        kc_lines.append("// ─── Key overrides ──────────────────────────────────────────────────")
+        kc_lines.append("// --- Key overrides --------------------------------------------------")
         for ko in ko_list:
             var  = re.sub(r"[^a-z0-9]", "_", ko["trigger"].lower()) + "_ko"
             desc = ko.get("description", "")
@@ -380,7 +446,7 @@ def generate_keymap(layout: dict):
         kc_lines.append("")
 
     # Keymaps
-    kc_lines.append("// ─── Keymaps ────────────────────────────────────────────────────────")
+    kc_lines.append("// --- Keymaps --------------------------------------------------------")
     kc_lines.append("const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {")
     kc_lines.append("")
     lmacro = layout["meta"]["layout_macro"]
@@ -420,19 +486,25 @@ def generate_keymap(layout: dict):
             break
 
     if hrm_keys:
-        kc_lines.append("// ─── Per-key tapping term ───────────────────────────────────────────")
+        tt = cfg.get('tapping_term', 200)
+        kc_lines.append("// --- Per-key tapping term -------------------------------------------")
         kc_lines.append("uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {")
         kc_lines.append("    switch (keycode) {")
         pinky = [k for k in hrm_keys if k[1] in ("LGUI", "RGUI")]
+        ring  = [k for k in hrm_keys if k[1] in ("LALT", "RALT")]
         index = [k for k in hrm_keys if k[1] in ("LSFT", "RSFT")]
         if pinky:
             for kc, _, _ in pinky:
-                kc_lines.append(f"        case {kc}:  // pinky — slower")
-            kc_lines.append(f"            return TAPPING_TERM + 50;  // {cfg.get('tapping_term', 200) + 50}ms")
+                kc_lines.append(f"        case {kc}:  // pinky — slowest")
+            kc_lines.append(f"            return TAPPING_TERM + 30;  // {tt + 30}ms")
+        if ring:
+            for kc, _, _ in ring:
+                kc_lines.append(f"        case {kc}:  // ring — slow")
+            kc_lines.append(f"            return TAPPING_TERM + 15;  // {tt + 15}ms")
         if index:
             for kc, _, _ in index:
-                kc_lines.append(f"        case {kc}:  // index — faster")
-            kc_lines.append(f"            return TAPPING_TERM - 20;  // {cfg.get('tapping_term', 200) - 20}ms")
+                kc_lines.append(f"        case {kc}:  // index — fastest")
+            kc_lines.append(f"            return TAPPING_TERM - 20;  // {tt - 20}ms")
         kc_lines.append("        default:")
         kc_lines.append("            return TAPPING_TERM;")
         kc_lines.append("    }")
@@ -441,7 +513,7 @@ def generate_keymap(layout: dict):
 
     (KEYMAP_DIR / "keymap.c").write_text("\n".join(kc_lines))
 
-    # ── config.h ──────────────────────────────────────────────────────────────
+    # -- config.h --------------------------------------------------------------
     tt  = cfg.get("tapping_term", 200)
     qtt = cfg.get("quick_tap_term", 0)
     ct  = cfg.get("combo_term", 50)
@@ -459,26 +531,46 @@ def generate_keymap(layout: dict):
 // Combo detection window
 #define COMBO_TERM {ct}
 
+// VIA support: allow all 6 layers
+#define DYNAMIC_KEYMAP_LAYER_COUNT 6
+
 // DO NOT enable HOLD_ON_OTHER_KEY_PRESS — destroys HRM usability
 // DO NOT enable PERMISSIVE_HOLD globally — causes misfires on key rolls
+
+// Split serial pin for the GP0 rewire
+#define SERIAL_USART_TX_PIN GP0
 """
     (KEYMAP_DIR / "config.h").write_text(config_h)
 
-    # ── rules.mk ──────────────────────────────────────────────────────────────
+    # -- rules.mk --------------------------------------------------------------
+    # Auto-detect mouse keys across all layers
+    has_mouse = False
+    for lay in layers:
+        for row in lay["rows"]:
+            for k in row:
+                if any(prefix in k for prefix in ("KC_MS_", "MS_", "KC_WH_", "WH_")):
+                    has_mouse = True
+                    break
+            if has_mouse:
+                break
+        if has_mouse:
+            break
+
     rules_mk_lines = [
         "# AUTO-GENERATED by sweep — edit layout.json then run: sweep generate",
         "",
         "COMBO_ENABLE        = yes",
         "CAPS_WORD_ENABLE    = yes",
-        "TRI_LAYER_ENABLE    = yes   # hold NAV + SYM simultaneously → NUM layer",
+        "VIA_ENABLE          = yes",
     ]
+    if has_mouse:
+        rules_mk_lines.append("MOUSEKEY_ENABLE     = yes")
     if ko_list:
         rules_mk_lines.append("KEY_OVERRIDE_ENABLE = yes")
     rules_mk_lines += [
         "",
         "# Optional — enable if needed:",
         "# TAP_DANCE_ENABLE  = yes   # adds tapping_term latency per key — avoid unless needed",
-        "# MOUSEKEY_ENABLE   = yes",
     ]
     (KEYMAP_DIR / "rules.mk").write_text("\n".join(rules_mk_lines) + "\n")
 
@@ -488,9 +580,9 @@ def generate_keymap(layout: dict):
     print(f"  {KEYMAP_DIR}/rules.mk")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # Commands
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def cmd_list(args):
     layout = load()
@@ -510,10 +602,10 @@ def cmd_show(args):
 
     if args.layer is not None:
         idx, lay = find_layer(layout, args.layer)
-        print(render_layer(lay, idx, total))
+        print(render_layer(lay, idx, total, layers))
     else:
         for i, lay in enumerate(layers):
-            print(render_layer(lay, i, total))
+            print(render_layer(lay, i, total, layers))
 
 
 def cmd_set(args):
@@ -562,7 +654,7 @@ def cmd_combos(args):
         )
         result = BYEL + parse_key(c["result"])["tap"] + RST
         desc   = c.get("description", "")
-        print(f"  {DIM}{i}{RST}  {keys_disp}  →  {result}  {DIM}{desc}{RST}")
+        print(f"  {DIM}{i}{RST}  {keys_disp}  ->  {result}  {DIM}{desc}{RST}")
     print()
 
 
@@ -589,54 +681,84 @@ def cmd_flash(args):
     # First generate fresh files
     generate_keymap(layout)
 
+    # Copy keymap files to QMK submodule
+    import shutil
+    qmk_keymap_dir = Path("./qmk_firmware/keyboards/holykeebs/sweeq/keymaps/sweeq")
+    qmk_keymap_dir.mkdir(parents=True, exist_ok=True)
+    for f in ["keymap.c", "config.h", "rules.mk"]:
+        shutil.copy(KEYMAP_DIR / f, qmk_keymap_dir / f)
+    print(f"{GRN}✓{RST} Copied keymap files to QMK submodule")
+
     print(f"\n{BOLD}Flashing {kb}…{RST}")
     print(f"{DIM}Put keyboard in bootloader mode (QK_BOOT key or double-tap reset){RST}\n")
 
-    result = subprocess.run(
-        [qmk, "flash", "-kb", kb, "-km", "sweep_layout", "-e", f"KEYMAP_PATH={km_path}"],
-        cwd=str(PROJ),
-    )
+    # Build using holykeebs fork (hk-master branch) with trackpoint support
+    make_args = [
+        "make", f"{kb}:sweeq:flash",
+        "-e", "USER_NAME=holykeebs",
+        "-e", "POINTING_DEVICE=trackpoint",
+        "-e", "POINTING_DEVICE_POSITION=right",
+        "-j8",
+    ]
+
+    # Mount RPI-RP2 drive if in bootloader mode
+    subprocess.run(["udisksctl", "mount", "-b", "/dev/sda1"], capture_output=True)
+
+    result = subprocess.run(make_args, cwd="./qmk_firmware")
     if result.returncode != 0:
         sys.exit(f"\n{RED}✗{RST} Flash failed (exit {result.returncode})")
     print(f"\n{GRN}✓{RST} Flash complete!")
+    print(f"\n{YEL}⚠{RST} Remember to flash the other half too (same firmware, separate bootloader)")
 
 
 def cmd_cheatsheet(args):
-    """Full cheat sheet — used by Omarchy popup (sweep cheatsheet)."""
+    """Full cheat sheet -- used by Omarchy popup (sweep cheatsheet)."""
     layout = load()
     layers = layout["layers"]
     combos = layout.get("combos", [])
     total  = len(layers)
+    W = 61
 
     # Header
-    print(f"\n{BCYN}{BOLD}  Ferris Sweep — Keyboard Layout Cheat Sheet  {RST}")
-    print(f"{DIM}  {layout['meta']['description']}{RST}")
+    print(f"{BCYN}{BOLD}  Sweeq Cheat Sheet{RST}  {DIM}{layout['meta']['description']}{RST}")
 
     for i, lay in enumerate(layers):
-        print(render_layer(lay, i, total))
+        print(render_layer(lay, i, total, layers))
 
-    # Combos section
+    # Combos
     if combos:
-        W = 61
-        print(f"\n{BYEL}{BOLD}{'═' * W}{RST}")
-        print(f"{BYEL}{BOLD}  COMBOS (press simultaneously){RST}")
-        print(f"{BYEL}{'─' * W}{RST}")
+        print(f"{BYEL}{'-' * W}{RST}")
+        print(f"  {BYEL}{BOLD}COMBOS{RST}")
         for c in combos:
             keys_disp = " + ".join(
-                CYN + _ctr(parse_key(k)["tap"]) + RST for k in c["keys"]
+                CYN + parse_key(k)["tap"] + RST for k in c["keys"]
             )
-            result = BGRN + _ctr(parse_key(c["result"])["tap"]) + RST
-            desc   = c.get("description", "")
-            print(f"  {keys_disp}  →  {result}  {DIM}{desc}{RST}")
-        print(f"{BYEL}{'═' * W}{RST}")
+            res = BGRN + parse_key(c["result"])["tap"] + RST
+            desc = c.get("description", "")
+            print(f"  {keys_disp} -> {res}  {DIM}{desc}{RST}")
 
-    # Legend
-    print(f"\n{DIM}  Legend:{RST}")
-    print(f"  {CYN}key{RST}  HRM tap  {YEL}sub{RST}  HRM hold (home row mod)")
-    print(f"  {BGRN}key{RST}  Layer-tap  {GRN}sub{RST}  Layer on hold")
-    print(f"  {DIM}···{RST}  Transparent (fall through to lower layer)")
-    print(f"  {DIM}{RED}✗{RST}  No key (blocked)")
-    print()
+    # Compact legend
+    print(f"{DIM}{'-' * W}{RST}")
+    print(f"  {CYN}A/Ctl{RST} tap=A hold=Ctrl (HRM)   {BGRN}Bsp/LOW{RST} tap=Bsp hold=layer")
+    print(f"  {DIM}___{RST} transparent   {DIM}{RED}---{RST} blocked   Boot=flash   Sup=Super")
+    print(f"  MB1-5=mouse btns   Slw/Med=mouse accel   CpWd=caps word")
+    print(f"{DIM}  q to close{RST}")
+
+    # Keep window open until user dismisses
+    try:
+        import tty, termios
+        fd = sys.stdin.fileno()
+        old = termios.tcgetattr(fd)
+        try:
+            tty.setraw(fd)
+            while True:
+                ch = sys.stdin.read(1)
+                if ch in ('q', 'Q', '\x03'):  # q or Ctrl+C
+                    break
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old)
+    except (ImportError, termios.error, OSError):
+        input()
 
 
 def cmd_info(args):
@@ -668,9 +790,9 @@ def cmd_info(args):
     print()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # Entry point
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def main():
     p = argparse.ArgumentParser(

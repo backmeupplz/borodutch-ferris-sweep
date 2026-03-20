@@ -1,107 +1,128 @@
-# ferris-sweep
+# Borodutch Ferris Sweep
 
-Ferris Sweep keyboard layout manager — edit layers from CLI, generate QMK firmware, and pop up a cheat sheet in Omarchy.
+⚠️ **AI Agent Note**: This repository is designed as a starting point for AI assistants. Don't clone this directly — give it to Claude/Cursor along with your customization requests.
 
-## Layout
+Custom firmware for the HolyKeebs Sweeq (Ferris Sweep variant) split keyboard with trackpoint support. Built with a 6-layer Miryoku-inspired Colemak layout and VIA runtime configuration.
 
-**Base:** Colemak-DH with Home Row Mods (GACS order: Super/Alt/Ctrl/Shift)  
-**5 layers:** BASE → NAV → SYM → NUM → MED  
-**Optimised for:** Neovim/LazyVim · AI prompt writing · Hyprland/Omarchy shortcuts
+## What's Included
 
+- **Keyboard**: HolyKeebs Sweeq (Ferris Sweep with integrated trackpoint)
+- **Layout**: 6-layer Colemak (QWERTY scancodes + OS-level Colemak remap)
+- **Trackpoint**: Full support via holykeebs firmware (`HK_D_MODE` for drag-scroll)
+- **VIA Enabled**: Edit keymaps in browser at https://usevia.app without reflashing
+- **Flash Script**: Simple `./sweep flash` command for both halves
+- **Home Row Mods**: GACS order (Super/Alt/Ctrl/Shift) on both hands
+- **Combos**: N+E (JK on QWERTY) → Escape, Z+/ → Caps Word
+
+## Quick Start
+
+### 1. Clone with submodules
+```bash
+git clone --recurse-submodules https://github.com/backmeupplz/borodutch-ferris-sweep.git
+cd borodutch-ferris-sweep
 ```
-BASE — Colemak-DH + HRM
-  Q    W    F    P    B  ┃  J    L    U    Y    '
- [A]  [R]  [S]  [T]  G  ┃  M   [N]  [E]  [I]  [O]
-  Z    X    C    D    V  ┃  K    H    ,    .    /
-              Tab  Spc   ┃  Ent  Bsp
-              MED  NAV   ┃  SYM  NUM
 
-[X] = Home Row Mod: A=Super  R=Alt  S=Ctrl  T=Shift (mirrored on right)
+If you already cloned without submodules:
+```bash
+git submodule update --init --recursive
 ```
 
-## Install
+### 2. Flash both halves
+
+**Right half:**
+```bash
+./sweep flash
+```
+Put right half in bootloader mode (double-tap reset button).
+
+**Left half:**
+```bash
+./sweep flash
+```
+Put left half in bootloader mode.
+
+## Layout Overview
+
+| Layer | Purpose | Access |
+|-------|---------|--------|
+| **BASE** | Colemak-DH with HRM | Default |
+| **NAV** | Arrows, Home/End, PgUp/PgDn | Hold inner-left thumb (Spc) |
+| **SYM** | Brackets, symbols (`{}[]!@#$%^&*()`) | Hold inner-right thumb (Ent) |
+| **NUM** | Numpad + F-keys + Russian extras (Х Ъ Э Ё Ж) | Hold outer-right thumb (Bsp) |
+| **MOUSE** | Trackpoint controls, drag-scroll | Hold outer-left thumb (Tab) |
+| **SYSTEM** | Bootloader, reset | Combo: both inner thumbs |
+
+**Combos:**
+- **N+E** (right home row index+middle) → Escape (for Vim)
+- **Both inner thumbs** → SYSTEM layer
+- **Z+/** (bottom row outer columns) → Caps Word
+
+## Editing the Layout
+
+### Option 1: VIA (Recommended for quick changes)
+1. Go to https://usevia.app
+2. Connect keyboard via USB
+3. Select your keyboard from the device list
+4. Edit keymaps in the visual editor — changes persist to EEPROM
+
+### Option 2: Edit layout.json
+1. Modify `layout.json` (JSON format, human-readable layer definitions)
+2. Run `./sweep generate` to update QMK files
+3. Run `./sweep flash` to apply changes
+
+## Prerequisites
+
+- Python 3 (for `sweep` script)
+- `arm-none-eabi-gcc` (Arch: `yay -S arm-none-eabi-gcc`)
+- `udisksctl` (optional, for auto-mounting RPI-RP2 bootloader drive)
+
+## Available Commands
 
 ```bash
-./install.sh
+./sweep list                      # List all layers
+./sweep show [LAYER]              # Show layer diagram(s)
+./sweep set LAYER ROW COL KEY     # Set a specific key
+./sweep combos                    # Show all combos
+./sweep generate                  # Regenerate QMK files from layout.json
+./sweep flash                     # Compile + flash firmware
+./sweep cheatsheet                # Full cheat sheet (scrollable)
+./sweep info                      # Project info
 ```
 
-This will:
-1. Symlink `sweep` to `~/.local/bin/sweep`
-2. Generate `keymap/` QMK files
-3. Add floating window rules + `Super+Shift+K` keybinding to Hyprland
-
-## Usage
-
-```bash
-sweep list                      # list all layers
-sweep show                      # show all layers
-sweep show BASE                 # show a specific layer
-sweep show 2                    # show layer by index
-sweep combos                    # show all combos
-
-sweep set BASE 1 0 LGUI_T(KC_A) # set row 1, col 0 on BASE layer
-sweep set NAV 0 5 KC_PGUP       # set top-right on NAV layer
-# ROW: 0=top  1=home  2=bottom  3=thumbs
-# COL: 0-9 for alpha rows, 0-3 for thumb row
-
-sweep generate                  # regenerate keymap/ from layout.json
-sweep flash                     # compile + flash (requires: yay -S qmk)
-sweep cheatsheet                # full cheat sheet (also: Super+Shift+K popup)
-sweep info                      # project info + keyboard detection
-```
-
-## Editing the layout
-
-Edit `layout.json` directly or use `sweep set`. After any change:
-
-```bash
-sweep generate   # regenerates keymap/keymap.c, config.h, rules.mk
-```
-
-Then flash with QMK:
-
-```bash
-yay -S qmk
-qmk setup        # first time only
-sweep flash
-```
-
-## Layer map
-
-| Thumb hold | Layer | Purpose |
-|-----------|-------|---------|
-| Spc (inner L) | NAV | vi-arrows, Page/Home/End, nav modifiers |
-| Ent (inner R) | SYM | All symbols — brackets paired, ESC top-left |
-| Bsp (outer R) | NUM | Numbers (odd L, even R) + F-keys |
-| Tab (outer L) | MED | Media, RGB, system (QK_BOOT for flashing) |
-| NAV + SYM | NUM | Tri-layer shortcut |
-
-## Key combos
-
-| Combo | Result | Notes |
-|-------|--------|-------|
-| J + K | Esc | Neovim normal mode |
-| N + M | : | Neovim command mode |
-| U + I | Del | |
-| L + ' | Caps Word | Smarter caps lock |
-| D + F | Tab | Left-hand-only tab |
-| Shift + , | ; | Key override |
-| Shift + . | : | Key override |
-
-## Cheat sheet popup
-
-`Super + Shift + K` opens a floating ghostty window with the full cheat sheet.
-
-To close: `q` or `Ctrl+C`.
-
-## Files
+## Architecture
 
 ```
-layout.json     ← source of truth (edit this)
-sweep           ← CLI tool
-keymap/
-  keymap.c      ← auto-generated (do not edit directly)
-  config.h      ← auto-generated
-  rules.mk      ← auto-generated
-install.sh      ← one-time setup
+layout.json          ← Source of truth (edit this)
+sweep                ← Python CLI tool
+keymap/              ← Auto-generated QMK files
+  ├── keymap.c       ← Layer definitions
+  ├── config.h       ← Tapping term, combo settings
+  └── rules.mk       ← Build configuration (VIA, combos, etc.)
+qmk_firmware/        ← HolyKeebs QMK fork (submodule, hk-master branch)
+  └── keyboards/holykeebs/sweeq/keymaps/sweeq/  ← Copied during flash
 ```
+
+## Why Self-Contained?
+
+This repo includes the QMK firmware as a shallow submodule (`qmk_firmware/`). This ensures:
+- **Portability**: Works on any machine without external QMK installation
+- **Reproducibility**: Locked to specific holykeebs commit
+- **Simplicity**: Single command (`./sweep flash`) does everything
+
+## Omarchy Integration
+
+This layout is designed for use with [Omarchy](https://github.com/omarchy93/omarchy) Linux desktop:
+- Colemak keyboard variant in OS settings
+- `sweep cheatsheet` command bound to `Super+Shift+K` popup
+- Hyprland window rules for floating cheat sheet
+
+## Credits
+
+- **Hardware**: [HolyKeebs Sweeq](https://holykeebs.com)
+- **Firmware Base**: [holykeebs/qmk_firmware](https://github.com/holykeebs/qmk_firmware) (hk-master branch)
+- **Layout Philosophy**: [Miryoku](https://github.com/manna-harbour/miryoku)
+- **Inspiration**: Ferris Sweep minimalism
+
+## License
+
+GPL-2.0+ (same as QMK firmware)

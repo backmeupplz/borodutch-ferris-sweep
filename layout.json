@@ -1,10 +1,10 @@
 {
   "meta": {
-    "keyboard": "ferris/sweep",
+    "keyboard": "holykeebs/sweeq",
     "layout_macro": "LAYOUT_split_3x5_2",
-    "description": "Colemak-DH + Home Row Mods for Neovim / Omarchy / AI prompting",
+    "description": "Sweeq layout - Miryoku-inspired Colemak (QWERTY scancodes + OS remap), via holykeebs.com",
     "author": "backmeupplz",
-    "version": "1.0.0"
+    "version": "2.0.0"
   },
   "config": {
     "tapping_term": 200,
@@ -16,131 +16,90 @@
   "layers": [
     {
       "name": "BASE",
-      "description": "Colemak-DH + Home Row Mods — GACS order (Super/Alt/Ctrl/Shift)",
-      "notes": [
-        "GACS = GUI(Super) · Alt · Ctrl · Shift on pinky→index",
-        "Super on pinky is optimal for Hyprland SUPER+key shortcuts",
-        "Use LALT everywhere (not RALT) — RALT = AltGr on Linux"
-      ],
+      "description": "Colemak (via OS remap) with GACS home row mods",
       "rows": [
-        ["KC_Q",         "KC_W",         "KC_F",         "KC_P",         "KC_B",    "KC_J",  "KC_L",         "KC_U",         "KC_Y",         "KC_QUOT"],
-        ["LGUI_T(KC_A)", "LALT_T(KC_R)", "LCTL_T(KC_S)", "LSFT_T(KC_T)", "KC_G",    "KC_M",  "RSFT_T(KC_N)", "RCTL_T(KC_E)", "LALT_T(KC_I)", "RGUI_T(KC_O)"],
-        ["KC_Z",         "KC_X",         "KC_C",         "KC_D",         "KC_V",    "KC_K",  "KC_H",         "KC_COMM",      "KC_DOT",       "KC_SLSH"],
-        ["LT(MED,KC_TAB)", "LT(NAV,KC_SPC)", "LT(SYM,KC_ENT)", "LT(NUM,KC_BSPC)"]
+        ["KC_Q", "KC_W", "KC_E", "KC_R", "KC_T", "KC_Y", "KC_U", "KC_I", "KC_O", "KC_P"],
+        ["LGUI_T(KC_A)", "LALT_T(KC_S)", "LCTL_T(KC_D)", "LSFT_T(KC_F)", "KC_G", "KC_H", "RSFT_T(KC_J)", "RCTL_T(KC_K)", "RALT_T(KC_L)", "RGUI_T(KC_SCLN)"],
+        ["KC_Z", "KC_X", "KC_C", "KC_V", "KC_B", "KC_N", "KC_M", "KC_COMM", "KC_DOT", "KC_SLSH"],
+        ["LT(MOUSE,KC_TAB)", "LT(NAV,KC_BSPC)", "LT(SYM,KC_SPC)", "LT(NUM,KC_ENT)"]
       ]
     },
     {
       "name": "NAV",
-      "description": "Navigation — vi-style arrows, modifiers on home row",
-      "notes": [
-        "Left hand: modifiers mirrored (hold for combos with right hand nav)",
-        "Right hand: arrows in hjkl position (same fingers as Colemak h/n/e/i)",
-        "Activated by holding Space (left thumb inner)"
-      ],
+      "description": "Navigation + left-hand modifiers for chording",
       "rows": [
-        ["XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "KC_PGUP", "KC_HOME", "KC_UP",   "KC_END",  "KC_DEL"],
-        ["KC_LGUI",  "KC_LALT",  "KC_LCTL",  "KC_LSFT",  "XXXXXXX",  "KC_PGDN", "KC_LEFT", "KC_DOWN", "KC_RGHT", "KC_BSPC"],
-        ["XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "KC_INS",  "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX"],
-        ["_______",  "_______",  "KC_ENT",   "_______"]
+        ["KC_ESC", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "KC_HOME", "KC_PGDN", "KC_PGUP", "KC_END"],
+        ["KC_LGUI", "KC_LALT", "KC_LCTL", "KC_LSFT", "XXXXXXX", "KC_LEFT", "KC_DOWN", "KC_UP", "KC_RGHT", "KC_INS"],
+        ["XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX"],
+        ["XXXXXXX", "_______", "KC_ENT", "KC_DEL"]
       ]
     },
     {
       "name": "SYM",
-      "description": "Symbols — brackets paired L/R, coding + AI prompt optimised",
-      "notes": [
-        "Opening brackets on left hand, closing on right — natural pairing",
-        "ESC top-left corner — critical for Neovim normal mode",
-        "Backtick top-right — markdown code blocks for AI prompts",
-        "Hash/Bang/At prominent for shell, markdown, regex",
-        "Activated by holding Enter (right thumb inner)"
-      ],
+      "description": "Symbols (shifted numbers) + right-hand modifiers",
       "rows": [
-        ["KC_ESC",  "KC_LBRC", "KC_LCBR", "KC_LPRN", "KC_TILD",  "KC_CIRC", "KC_RPRN", "KC_RCBR", "KC_RBRC", "KC_GRV"],
-        ["KC_MINS", "KC_ASTR", "KC_EQL",  "KC_UNDS", "KC_DLR",   "KC_HASH", "KC_EXLM", "KC_AT",   "KC_SLSH", "KC_QUES"],
-        ["KC_PLUS", "KC_PIPE", "KC_LT",   "KC_GT",   "KC_PERC",  "KC_BSLS", "KC_AMPR", "KC_SCLN", "KC_COLN", "KC_DQUO"],
-        ["_______", "KC_SPC",  "_______", "_______"]
+        ["KC_LCBR", "KC_AMPR", "KC_ASTR", "KC_LPRN", "KC_RCBR", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX"],
+        ["S(KC_P)", "KC_DLR", "KC_PERC", "KC_CIRC", "KC_PLUS", "XXXXXXX", "KC_RSFT", "KC_RCTL", "KC_RALT", "KC_RGUI"],
+        ["KC_TILD", "KC_EXLM", "KC_AT", "KC_HASH", "KC_PIPE", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX"],
+        ["KC_QUOT", "KC_RPRN", "_______", "KC_UNDS"]
+      ],
+      "notes": [
+        "RU: ' = Э"
       ]
     },
     {
       "name": "NUM",
-      "description": "Numbers + Function keys — numpad style, odd L / even R",
-      "notes": [
-        "Odd numbers on left, even on right — easier to learn than straight 1-9",
-        "Function keys mirror numerals on bottom row",
-        "Activated by holding Backspace (right thumb outer)",
-        "Also accessible: hold both NAV+SYM thumbs (tri-layer)"
-      ],
+      "description": "Numpad + F-keys + Russian extra characters",
       "rows": [
-        ["KC_7",    "KC_5",    "KC_3",    "KC_1",    "KC_9",     "KC_8",    "KC_0",    "KC_2",    "KC_4",    "KC_6"],
-        ["KC_LGUI", "KC_LALT", "KC_LCTL", "KC_LSFT", "KC_F11",   "KC_F10",  "KC_RSFT", "KC_RCTL", "KC_LALT", "KC_RGUI"],
-        ["KC_F7",   "KC_F5",   "KC_F3",   "KC_F1",   "KC_F9",    "KC_F8",   "KC_F12",  "KC_F2",   "KC_F4",   "KC_F6"],
-        ["_______", "_______", "_______", "_______"]
+        ["KC_F1", "KC_F2", "KC_F3", "KC_F4", "KC_F5", "KC_LBRC", "KC_7", "KC_8", "KC_9", "KC_RBRC"],
+        ["KC_LGUI", "KC_LALT", "KC_LCTL", "KC_LSFT", "KC_F11", "KC_SCLN", "KC_4", "KC_5", "KC_6", "KC_EQL"],
+        ["KC_F6", "KC_F7", "KC_F8", "KC_F9", "KC_F10", "KC_GRV", "KC_1", "KC_2", "KC_3", "KC_BSLS"],
+        ["KC_F12", "KC_0", "KC_MINS", "_______"]
+      ],
+      "notes": [
+        "RU: [ = Х  ] = Ъ  ` = Ё  O(;) = Ж"
       ]
     },
     {
-      "name": "MED",
-      "description": "Media + System — playback, volume, RGB, reset",
-      "notes": [
-        "Activated by holding Tab (left thumb outer)",
-        "QK_BOOT: put keyboard in bootloader mode for flashing"
-      ],
+      "name": "MOUSE",
+      "description": "Left-hand mouse controls, right hand on trackpoint",
       "rows": [
-        ["QK_BOOT",  "XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "RGB_TOG", "RGB_MOD", "RGB_HUI", "RGB_SAI", "RGB_VAI"],
-        ["XXXXXXX",  "KC_MPRV",  "KC_VOLD",  "KC_VOLU",  "KC_MNXT",  "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX"],
-        ["XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "XXXXXXX",  "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX"],
-        ["_______",  "KC_MPLY",  "KC_MSTP",  "KC_MUTE"]
+        ["QK_BOOT", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "QK_BOOT"],
+        ["KC_LGUI", "HK_D_MODE", "MS_BTN2", "MS_BTN1", "MS_BTN3", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX"],
+        ["XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX"],
+        ["_______", "MS_BTN1", "XXXXXXX", "XXXXXXX"]
+      ]
+    },
+    {
+      "name": "SYSTEM",
+      "description": "System layer (combo: both inner thumbs)",
+      "rows": [
+        ["QK_BOOT", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "QK_BOOT"],
+        ["XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX"],
+        ["XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX", "XXXXXXX"],
+        ["XXXXXXX", "_______", "_______", "XXXXXXX"]
       ]
     }
   ],
   "combos": [
     {
       "name": "jk_esc",
-      "keys": ["KC_J", "KC_K"],
+      "keys": ["RSFT_T(KC_J)", "RCTL_T(KC_K)"],
       "result": "KC_ESC",
-      "description": "jk → Escape (Neovim muscle memory)",
-      "layer": "BASE"
+      "description": "N+E in Colemak (right home index+middle) -> Escape for Vim"
     },
     {
-      "name": "nm_coln",
-      "keys": ["RSFT_T(KC_N)", "KC_M"],
-      "result": "KC_COLN",
-      "description": "nm → Colon (fast Neovim command mode)",
-      "layer": "BASE"
+      "name": "inner_thumbs_system",
+      "keys": ["LT(NAV,KC_BSPC)", "LT(SYM,KC_SPC)"],
+      "result": "MO(SYSTEM)",
+      "description": "Both inner thumbs -> system/boot layer"
     },
     {
-      "name": "ui_del",
-      "keys": ["KC_U", "KC_I"],
-      "result": "KC_DEL",
-      "description": "ui → Delete",
-      "layer": "BASE"
-    },
-    {
-      "name": "lq_capsword",
-      "keys": ["KC_L", "KC_QUOT"],
+      "name": "zslash_capsword",
+      "keys": ["KC_Z", "KC_SLSH"],
       "result": "CW_TOGG",
-      "description": "l' → Caps Word toggle (smarter than Caps Lock)",
-      "layer": "BASE"
-    },
-    {
-      "name": "df_tab",
-      "keys": ["KC_D", "KC_F"],
-      "result": "KC_TAB",
-      "description": "df → Tab (left hand only, useful in terminal)",
-      "layer": "BASE"
+      "description": "Z+/ (bottom row outer columns) -> Caps Word for CONSTANT_CASE"
     }
   ],
-  "key_overrides": [
-    {
-      "trigger": "KC_COMM",
-      "modifier": "MOD_MASK_SHIFT",
-      "result": "KC_SCLN",
-      "description": "Shift+, → ; (recover semicolon)"
-    },
-    {
-      "trigger": "KC_DOT",
-      "modifier": "MOD_MASK_SHIFT",
-      "result": "KC_COLN",
-      "description": "Shift+. → : (recover colon, alternative to combo)"
-    }
-  ]
+  "key_overrides": []
 }

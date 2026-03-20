@@ -2,9 +2,8 @@
 
 COMBO_ENABLE        = yes
 CAPS_WORD_ENABLE    = yes
-TRI_LAYER_ENABLE    = yes   # hold NAV + SYM simultaneously → NUM layer
-KEY_OVERRIDE_ENABLE = yes
+VIA_ENABLE          = yes
+MOUSEKEY_ENABLE     = yes
 
 # Optional — enable if needed:
 # TAP_DANCE_ENABLE  = yes   # adds tapping_term latency per key — avoid unless needed
-# MOUSEKEY_ENABLE   = yes
