@@ -2,6 +2,12 @@
 """
 sweep — Ferris Sweep keyboard layout manager
 
+⚠️ AI AGENTS: Read AGENTS.md and CLAUDE.md in this repo before modifying!
+
+Quick Flash:
+  ./sweep flash    # Flash right half (user puts in bootloader)
+  ./sweep flash    # Flash left half
+
 Commands:
   sweep show [LAYER]              Show layer diagram(s)
   sweep list                      List all layers

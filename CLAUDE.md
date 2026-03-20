@@ -1,55 +1,149 @@
-# Ferris Sweep — Sweeq Layout Manager
+# Ferris Sweep (Sweeq) — AI Agent Reference
 
-## What this is
-CLI tool (`sweep`) for managing a Ferris Sweep keyboard layout ("Sweeq" — Miryoku-inspired Colemak). Source of truth is `layout.json`; QMK keymap files are generated from it.
+> Quick reference for AI agents working with this keyboard firmware repository.
 
-## Architecture: QWERTY scancodes + OS Colemak
-The keyboard sends **QWERTY scancodes** via QMK. Hyprland's `kb_variant = colemak` remaps letters to Colemak at the OS level. Symbols/numbers are NOT remapped by Colemak. The `sweep` CLI displays **Colemak output** (not raw QWERTY keycodes).
+## 🎯 One-Line Summary
 
-Russian ЙЦУКЕН maps to QWERTY physical positions via OS, so it works automatically. Extra Russian chars (Х Ъ Э Ё Ж) are on NUM/SYM layers via `[ ] ' \` ;` keycodes.
+Custom QMK firmware for HolyKeebs Sweeq (Ferris Sweep with trackpoint), 6-layer Miryoku-inspired Colemak layout, VIA-enabled, fully self-contained with embedded QMK submodule.
 
-## Key commands
+## ⚡ Most Common Tasks
+
+### Flash the Keyboard (Do This First)
 ```bash
-sweep cheatsheet          # view all layers + combos
-sweep show [LAYER]        # show one or all layers
-sweep list                # list layers
-sweep set LAYER ROW COL KEY  # set a key (ROW: 0=top 1=home 2=bottom 3=thumbs, COL: 0-9 alpha / 0-3 thumbs)
-sweep combos              # show combos
-sweep generate            # regenerate keymap/ from layout.json
-sweep flash               # compile + flash (needs qmk)
+cd /home/borodutch/code/borodutch-ferris-sweep
+./sweep flash  # Right half (user puts in bootloader mode)
+./sweep flash  # Left half (user puts in bootloader mode)
 ```
 
-## Editing the layout
-- Edit `layout.json` directly or use `sweep set`
-- After changes: run `sweep generate` to update `keymap/keymap.c`, `config.h`, `rules.mk`
-- Keys use QMK keycodes: `KC_A`, `LGUI_T(KC_A)` (home row mod), `LT(NAV,KC_SPC)` (layer-tap)
-- Use `S(KC_P)` for shifted keycodes (e.g., `:` in Colemak = Shift + QWERTY P scancode)
+### Quick Layout Change (VIA - No Flashing)
+Tell user: "Go to https://usevia.app, connect your keyboard, edit visually."
 
-## Flashing
-Uses **holykeebs QMK fork** (`hk-master` branch). Keyboard target is `holykeebs/sweeq` (NOT `ferris/sweep` or `idank/sweeq`).
+### Structural Change (Edit layout.json)
 ```bash
-sweep generate                  # regenerate keymap files
-sweep flash                     # compile + flash with trackpoint support
-# Or manually:
-make holykeebs/sweeq:sweeq:flash -e USER_NAME=holykeebs -e POINTING_DEVICE=trackpoint -e POINTING_DEVICE_POSITION=right -j8
+# Edit layout.json with new keycodes
+./sweep generate  # Regenerates keymap/keymap.c, config.h, rules.mk
+./sweep flash     # Flash both halves
 ```
-- **Both halves** must be flashed separately with the same firmware
-- Right half = master (has trackpoint, plugged into USB). Board defines `MASTER_RIGHT`.
-- Never disconnect TRRS cable while powered
-- QMK repo: `~/qmk_firmware` on branch `holykeebs/hk-master`
-- Keymap symlinked: `~/qmk_firmware/keyboards/holykeebs/sweeq/keymaps/sweeq -> keymap/`
-- No CONVERT_TO needed (board natively targets RP2040)
 
-## File structure
-- `layout.json` — source of truth (edit this)
-- `sweep` — Python CLI tool
-- `keymap/` — auto-generated QMK files (do not edit directly)
-- `install.sh` — one-time setup (symlinks, Hyprland config)
+## 🏗️ Architecture
 
-## Current layout
-6 layers: BASE (Colemak via OS, GACS home row mods), NAV (arrows/Home/End), SYM (shifted symbols), NUM (numpad/F-keys), MOUSE (trackpoint buttons/scroll), SYSTEM (boot).
+**Physical → QMK → OS**
+- **Physical:** QWERTY key positions
+- **QMK Sends:** QWERTY scancodes (A key sends `KC_A`)
+- **OS Remaps:** Hyprland `kb_variant = colemak` → Colemak layout
+- **Result:** User sees Colemak, keyboard sends QWERTY
 
-Combos:
-- N+E (right home index+middle) → Escape (for Vim)
-- Both inner thumbs (Bsp+Spc) → SYSTEM layer
-- Z+/ (bottom row corners) → Caps Word
+**Right Half = Master**
+- Contains trackpoint
+- Plugs into USB
+- LEFT half connects via TRRS cable (never disconnect while powered!)
+
+## 📂 File Structure
+
+```
+/home/borodutch/code/borodutch-ferris-sweep/
+├── AGENTS.md           ← READ THIS for AI instructions
+├── layout.json         ← EDIT THIS for layout changes
+├── sweep               ← Python CLI tool
+├── keymap/             ← Auto-generated (./sweep generate)
+│   ├── keymap.c
+│   ├── config.h
+│   └── rules.mk
+├── qmk_firmware/       ← HolyKeebs QMK submodule (hk-master)
+│   └── keyboards/holykeebs/sweeq/keymaps/sweeq/ ← Copied during flash
+├── README.md           ← User documentation
+└── LICENSE             ← GPL-2.0+
+```
+
+## 🎹 Layout Reference
+
+| Layer | Access | Purpose |
+|-------|--------|---------|
+| BASE | Default | Colemak-DH + GACS home row mods |
+| NAV | Hold inner-left (Spc) | Arrows, Home/End, PgUp/PgDn |
+| SYM | Hold inner-right (Ent) | Symbols `!@#$%^&*()[]{}` |
+| NUM | Hold outer-right (Bsp) | Numpad, F-keys, Russian extras |
+| MOUSE | Hold outer-left (Tab) | Trackpoint, drag-scroll |
+| SYSTEM | Combo (Bsp+Spc) | Bootloader, reset |
+
+**Combos:**
+- N+E → Escape (Vim normal mode)
+- Z+/ → Caps Word
+
+## 🔑 Keycode Quick Reference
+
+| Pattern | Example | Meaning |
+|---------|---------|---------|
+| `KC_XX` | `KC_A`, `KC_ENT` | Regular key |
+| `L/RXX_T(KC)` | `LGUI_T(KC_A)` | Home row mod (Left GUI tap/hold) |
+| `LT(LAYER,KC)` | `LT(NAV,KC_SPC)` | Layer-tap: tap=KC, hold=LAYER |
+| `S(KC)` | `S(KC_P)` | Shifted (e.g., `:` in Colemak) |
+| `XXXXXXX` | — | No key (empty) |
+| `_______` | — | Transparent (falls through) |
+| Special | `HK_D_MODE` | Drag-scroll mode |
+| Special | `MS_BTN1` | Mouse button |
+
+## 🛠️ Commands
+
+```bash
+./sweep list                 # List all layers
+./sweep show [LAYER]         # Show layer diagram
+./sweep set LAYER R C KEY    # Set key at row R, col C
+./sweep combos               # Show combos
+./sweep generate             # Regenerate QMK files
+./sweep flash                # Compile + flash firmware
+./sweep cheatsheet           # Full visual cheat sheet
+./sweep info                 # Project info
+```
+
+## 🚫 Common Mistakes to Avoid
+
+1. **Don't flash just one half** — Always flash BOTH halves separately
+2. **Don't use ferris/sweep target** — Use `holykeebs/sweeq` only
+3. **Don't disconnect TRRS while powered** — Will short GPIO pins
+4. **Don't forget to generate** — Edit layout.json → `./sweep generate` → `./sweep flash`
+5. **Don't reference ~/qmk_firmware** — Use `./qmk_firmware/` submodule
+
+## 🔗 Essential Resources
+
+- **VIA Editor:** https://usevia.app (for runtime keymap changes)
+- **AGENTS.md:** `/home/borodutch/code/borodutch-ferris-sweep/AGENTS.md` (detailed AI instructions)
+- **QMK Docs:** https://docs.qmk.fm
+- **HolyKeebs QMK:** https://github.com/holykeebs/qmk_firmware (hk-master branch)
+
+## 📝 Layout.json Format
+
+```json
+{
+  "meta": { "keyboard": "holykeebs/sweeq", "layout_macro": "LAYOUT_split_3x5_2" },
+  "config": { "tapping_term": 200, "quick_tap_term": 0, "combo_term": 50 },
+  "layers": [
+    {
+      "name": "LAYER_NAME",
+      "description": "What this layer does",
+      "rows": [
+        ["KC_Q", "KC_W", "KC_E", "KC_R", "KC_T",   "KC_Y", "KC_U", "KC_I", "KC_O", "KC_P"],
+        ["LGUI_T(KC_A)", "LALT_T(KC_S)", ...],  // home row
+        ["KC_Z", "KC_X", "KC_C", "KC_V", "KC_B",   "KC_N", "KC_M", "KC_COMM", "KC_DOT", "KC_SLSH"],
+        ["LT(MOUSE,KC_TAB)", "LT(NAV,KC_BSPC)", "LT(SYM,KC_SPC)", "LT(NUM,KC_ENT)"]
+      ]
+    }
+  ],
+  "combos": [
+    { "name": "jk_esc", "keys": ["RSFT_T(KC_J)", "RCTL_T(KC_K)"], "result": "KC_ESC" }
+  ]
+}
+```
+
+## 💡 AI Agent Workflow
+
+1. **User asks about layout:** → Suggest VIA for quick changes
+2. **User wants to modify:** → Edit `layout.json` → `./sweep generate`
+3. **User wants to apply:** → `./sweep flash` (remind: both halves!)
+4. **Something not working:** → Check `./sweep show` output, verify keycodes
+
+---
+
+**Repository:** https://github.com/backmeupplz/borodutch-ferris-sweep  
+**Last Updated:** March 2026  
+**See Also:** `AGENTS.md` for detailed flashing and troubleshooting guide
