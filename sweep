@@ -113,6 +113,9 @@ KC = {
     # Media
     "KC_MPLY": "Play", "KC_MSTP": "Stop", "KC_MPRV": "Prev", "KC_MNXT": "Next",
     "KC_VOLU": "Vol+", "KC_VOLD": "Vol-", "KC_MUTE": "Mute",
+    "KC_BRID": "Bri-", "KC_BRIU": "Bri+",
+    "KC_LABK": "<",    "KC_RABK": ">",
+    "KC_F20":  "Mic",
     # RGB
     "RGB_TOG": "RGB", "RGB_MOD": "Mod", "RGB_HUI": "Hue",
     "RGB_SAI": "Sat", "RGB_VAI": "Bri",
@@ -131,7 +134,29 @@ KC = {
     "DRGSCRL":  "Drag", "SNIPING": "Snpe",
     "HK_D_MODE": "Drag", "HK_D_MODE_T": "Drag",
     "S(KC_P)":  ":",
+    "S(KC_SLSH)": "?",
 }
+
+# Russian ЙЦУКЕН mapping (QWERTY scancode → Russian character)
+RU = {
+    "KC_Q": "Й", "KC_W": "Ц", "KC_E": "У", "KC_R": "К", "KC_T": "Е",
+    "KC_Y": "Н", "KC_U": "Г", "KC_I": "Ш", "KC_O": "Щ", "KC_P": "З",
+    "KC_A": "Ф", "KC_S": "Ы", "KC_D": "В", "KC_F": "А", "KC_G": "П",
+    "KC_H": "Р", "KC_J": "О", "KC_K": "Л", "KC_L": "Д", "KC_SCLN": "Ж",
+    "KC_Z": "Я", "KC_X": "Ч", "KC_C": "С", "KC_V": "М", "KC_B": "И",
+    "KC_N": "Т", "KC_M": "Ь", "KC_COMM": "Б", "KC_DOT": "Ю", "KC_SLSH": ".",
+    "KC_LBRC": "Х", "KC_RBRC": "Ъ", "KC_GRV": "Ё", "KC_QUOT": "Э",
+}
+
+def _get_base_kc(kc):
+    """Extract base keycode from mod-taps and layer-taps."""
+    m = re.match(r"^(?:LGUI|RGUI|LALT|RALT|LCTL|RCTL|LSFT|RSFT)_T\((.+)\)$", kc)
+    if m:
+        return m.group(1).strip()
+    m = re.match(r"^LT\(\w+,\s*(.+)\)$", kc)
+    if m:
+        return m.group(1).strip()
+    return kc.strip()
 
 MOD_SYM = {
     "LGUI": "Sup", "RGUI": "Sup",
@@ -192,11 +217,18 @@ def parse_key(kc: str) -> dict:
     if m:
         return {"type": "osl", "tap": m.group(1)[:3], "sub": "osl"}
 
-    # Shifted key: S(KC_X)
-    m = re.match(r"^S\((.+)\)$", kc)
+    # Modifier wrapper: LGUI(KC_X), LSFT(KC_X), S(KC_X), etc.
+    m = re.match(r"^(LGUI|RGUI|LALT|RALT|LCTL|RCTL|LSFT|RSFT|S)\((.+)\)$", kc)
     if m:
-        disp = KC.get(kc, KC.get(m.group(1), m.group(1).replace("KC_", "")[:4]))
-        return {"type": "basic", "tap": disp, "sub": ""}
+        # Check KC dict first for known display names (e.g. S(KC_P) -> ":")
+        if kc in KC:
+            return {"type": "basic", "tap": KC[kc], "sub": ""}
+        mod, inner = m.groups()
+        mod_names = {"LGUI": "Sup", "RGUI": "Sup", "LALT": "Alt", "RALT": "Alt",
+                     "LCTL": "Ctl", "RCTL": "Ctl", "LSFT": "Sft", "RSFT": "Sft", "S": "Sft"}
+        inner_disp = KC.get(inner.strip(), inner.strip().replace("KC_", "")[:4])
+        mod_disp = mod_names.get(mod, mod[:3])
+        return {"type": "basic", "tap": f"{mod_disp}+{inner_disp}", "sub": ""}
 
     # Basic
     disp = KC.get(kc, kc.replace("KC_", "")[:4])
@@ -238,17 +270,57 @@ def _resolve_transparent(layers, layer_idx, row_idx, col_idx):
     return "_______"
 
 
-def _compact_key(kc: str, inherited: bool = False) -> str:
+def _compact_key(kc: str, inherited: bool = False, ru_char: str = None) -> str:
     """Return a single colored string of width KEY_W showing tap/hold."""
     p = parse_key(kc)
     tap = p["tap"]
     sub = p["sub"]
 
-    if sub and sub.strip():
-        # Combine as "tap/sub" e.g. "Bsp/LOW"
-        combined = f"{tap}/{sub}"
+    has_sub = sub and sub.strip()
+
+    if has_sub:
+        if ru_char:
+            combined = f"{tap}{ru_char}/{sub}"
+        else:
+            combined = f"{tap}/{sub}"
     else:
         combined = tap
+
+    # Inline Russian character (dim) next to the main label
+    if ru_char and not has_sub:
+        vis = f"{tap} {ru_char}"
+        vis_len = len(vis)
+        pad = KEY_W - vis_len
+        lpad = pad // 2
+        rpad = pad - lpad
+        main = " " * lpad + tap
+        ru_part = " " + ru_char
+        trail = " " * rpad
+        if inherited:
+            return DIM + main + ru_part + trail + RST
+        return main + DIM + ru_part + RST + trail
+
+    if ru_char and has_sub:
+        # e.g. "AФ/Sup" — dim the Russian char within the colored cell
+        centered = _ctr(combined)
+        # Split to colorize: tap in main color, ru dim, /sub in main color
+        padded_vis = centered
+        if inherited:
+            return DIM + padded_vis + RST
+        if p["type"] == "hrm":
+            pre = _ctr(f"{tap}/{sub}")  # same width padding
+            # Rebuild with dim Russian char inserted
+            vis_with_ru = f"{tap}{ru_char}/{sub}"
+            c = _ctr(vis_with_ru)
+            # Find where ru_char sits to dim it
+            idx = c.find(ru_char)
+            return CYN + c[:idx] + RST + DIM + ru_char + RST + CYN + c[idx+len(ru_char):] + RST
+        if p["type"] == "lt":
+            vis_with_ru = f"{tap}{ru_char}/{sub}"
+            c = _ctr(vis_with_ru)
+            idx = c.find(ru_char)
+            return BGRN + c[:idx] + RST + DIM + ru_char + RST + BGRN + c[idx+len(ru_char):] + RST
+        return padded_vis
 
     centered = _ctr(combined)
 
@@ -267,25 +339,31 @@ def _compact_key(kc: str, inherited: bool = False) -> str:
     return centered
 
 
-def _render_row(keys, inherited=None):
+def _render_row(keys, inherited=None, ru_chars=None):
     if inherited is None:
         inherited = [False] * len(keys)
+    if ru_chars is None:
+        ru_chars = [None] * len(keys)
     left  = keys[:HALF]
     right = keys[HALF : HALF * 2]
     inh = inherited[:HALF] + inherited[HALF : HALF * 2]
+    ru  = ru_chars[:HALF] + ru_chars[HALF : HALF * 2]
     all_keys = left + right
-    cells = [_compact_key(k, inherited=i) for k, i in zip(all_keys, inh)]
+    cells = [_compact_key(k, inherited=i, ru_char=r) for k, i, r in zip(all_keys, inh, ru)]
     return " ".join(cells[:HALF]) + "  " + SEP + "  " + " ".join(cells[HALF:])
 
 
-def _render_thumb(thumbs, inherited=None):
+def _render_thumb(thumbs, inherited=None, ru_chars=None):
     if inherited is None:
         inherited = [False] * len(thumbs)
+    if ru_chars is None:
+        ru_chars = [None] * len(thumbs)
     left_t  = thumbs[:2]
     right_t = thumbs[2:4]
     inh = inherited[:2] + inherited[2:4]
+    ru  = ru_chars[:2] + ru_chars[2:4]
     all_keys = left_t + right_t
-    cells = [_compact_key(k, inherited=i) for k, i in zip(all_keys, inh)]
+    cells = [_compact_key(k, inherited=i, ru_char=r) for k, i, r in zip(all_keys, inh, ru)]
     # Align | with alpha rows
     # Alpha | is at: HALF*KEY_W + (HALF-1) + 2 = 5*7+4+2 = 41
     # Thumb before |: indent + 2*KEY_W + 1 + 2 = indent + 17
@@ -293,6 +371,18 @@ def _render_thumb(thumbs, inherited=None):
     thumb_before_sep = 2 * KEY_W + 1 + 2
     indent = " " * (alpha_sep_pos - thumb_before_sep)
     return indent + " ".join(cells[:2]) + "  " + SEP + "  " + " ".join(cells[2:])
+
+
+def _render_ru_subtitle(keys):
+    """Render a dim Russian subtitle row under an alpha row."""
+    cells = []
+    for kc in keys:
+        base = _get_base_kc(kc)
+        ru = RU.get(base, "")
+        cells.append(_ctr(ru) if ru else " " * KEY_W)
+    left = " ".join(cells[:HALF])
+    right = " ".join(cells[HALF:])
+    return f"{DIM}{left}    {right}{RST}"
 
 
 def render_layer(layer: dict, idx: int, total: int, layers=None) -> str:
@@ -329,33 +419,19 @@ def render_layer(layer: dict, idx: int, total: int, layers=None) -> str:
     thumbs     = resolved_rows[3] if len(resolved_rows) > 3 else []
     thumbs_inh = inherited_flags[3] if len(inherited_flags) > 3 else []
 
+    is_base = name == "BASE"
+
     for i, row in enumerate(alpha_rows):
-        out.append(f"  {_render_row(row, alpha_inh[i])}")
-        if i < len(alpha_rows) - 1:
-            out.append("")
+        orig_row = rows[i] if i < len(rows) else row
+        ru_chars = [RU.get(_get_base_kc(k)) for k in orig_row]
+        out.append(f"  {_render_row(row, alpha_inh[i], ru_chars=ru_chars)}")
 
     if thumbs:
-        out.append("")
-        out.append(f"  {_render_thumb(thumbs, thumbs_inh)}")
+        orig_thumbs = rows[3] if len(rows) > 3 else thumbs
+        ru_chars = [RU.get(_get_base_kc(k)) for k in orig_thumbs]
+        out.append(f"  {_render_thumb(thumbs, thumbs_inh, ru_chars=ru_chars)}")
 
-    # HRM legend (inline, compact)
-    home = rows[1] if len(rows) > 1 else []
-    hrms = [(i, k) for i, k in enumerate(home) if "_T(" in k]
-    if hrms:
-        def _hrm_fmt(kc):
-            m = re.match(r"^(LGUI|RGUI|LALT|RALT|LCTL|RCTL|LSFT|RSFT)_T\((.+)\)$", kc)
-            if m:
-                mod, inner = m.groups()
-                letter = KC.get(inner.strip(), inner.strip().replace("KC_", ""))
-                return f"{CYN}{letter}{RST}={YEL}{MOD_LONG[mod]}{RST}"
-            return kc
-        hrm_parts = [_hrm_fmt(k) for _, k in hrms]
-        out.append(f"  {DIM}hold:{RST} " + "  ".join(hrm_parts))
-
-    # Notes
-    notes = layer.get("notes", [])
-    for note in notes:
-        out.append(f"  {DIM}* {note}{RST}")
+    # HRM legend removed — Russian chars are now inline in HRM cells (e.g. AФ/Sup)
 
     return "\n".join(out)
 
@@ -451,6 +527,24 @@ def generate_keymap(layout: dict):
         kc_lines.append("};")
         kc_lines.append("")
 
+    # EEPROM version check — clears VIA keymap when layout_version is bumped
+    layout_ver = layout["meta"].get("layout_version", 0)
+    if layout_ver:
+        kc_lines.append("// --- EEPROM version check -------------------------------------------")
+        kc_lines.append(f"#define LAYOUT_VERSION {layout_ver}")
+        kc_lines.append("#include \"eeprom.h\"")
+        kc_lines.append("#include \"eeconfig.h\"")
+        kc_lines.append("")
+        kc_lines.append("void keyboard_post_init_keymap(void) {")
+        kc_lines.append("    extern void dynamic_keymap_reset(void);")
+        kc_lines.append("    uint8_t *ver_addr = (uint8_t*)60;")
+        kc_lines.append("    if (eeprom_read_byte(ver_addr) != LAYOUT_VERSION) {")
+        kc_lines.append("        dynamic_keymap_reset();")
+        kc_lines.append("        eeprom_update_byte(ver_addr, LAYOUT_VERSION);")
+        kc_lines.append("    }")
+        kc_lines.append("}")
+        kc_lines.append("")
+
     # Keymaps
     kc_lines.append("// --- Keymaps --------------------------------------------------------")
     kc_lines.append("const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {")
@@ -517,6 +611,24 @@ def generate_keymap(layout: dict):
         kc_lines.append("}")
         kc_lines.append("")
 
+    # Enable HOLD_ON_OTHER_KEY_PRESS only for thumb LT() keys.
+    # This makes layer-taps activate instantly when another key is pressed,
+    # solving the "space + apostrophe = space tab" problem.
+    # HRMs keep the default (false) to avoid misfires during fast typing.
+    lt_keys = []
+    for lay in layers:
+        if lay["name"] == "BASE":
+            for kc in lay["rows"][-1]:  # thumb row
+                if kc.startswith("LT("):
+                    lt_keys.append(kc)
+            break
+    kc_lines.append("// --- Per-key hold-on-other-key-press --------------------------------")
+    kc_lines.append("bool get_hold_on_other_key_press(uint16_t keycode, keyrecord_t *record) {")
+    kc_lines.append("    // Layer-taps (thumbs) activate immediately; HRMs keep default")
+    kc_lines.append("    return IS_QK_LAYER_TAP(keycode);")
+    kc_lines.append("}")
+    kc_lines.append("")
+
     (KEYMAP_DIR / "keymap.c").write_text("\n".join(kc_lines))
 
     # -- config.h --------------------------------------------------------------
@@ -544,6 +656,7 @@ def generate_keymap(layout: dict):
 // DO NOT enable PERMISSIVE_HOLD globally — causes misfires on key rolls
 
 // Split serial pin for the GP0 rewire
+#undef SERIAL_USART_TX_PIN
 #define SERIAL_USART_TX_PIN GP0
 """
     (KEYMAP_DIR / "config.h").write_text(config_h)
@@ -743,11 +856,18 @@ def cmd_cheatsheet(args):
             desc = c.get("description", "")
             print(f"  {keys_disp} -> {res}  {DIM}{desc}{RST}")
 
-    # Compact legend
+    # Key overrides
+    ko_list = layout.get("key_overrides", [])
+    if ko_list:
+        print(f"{BYEL}{'-' * W}{RST}")
+        print(f"  {BYEL}{BOLD}SHIFT OVERRIDES{RST}")
+        for ko in ko_list:
+            trigger = parse_key(ko["trigger"])["tap"]
+            result  = parse_key(ko["result"])["tap"]
+            desc    = ko.get("description", "")
+            print(f"  {CYN}Sft+{trigger}{RST} -> {BGRN}{result}{RST}  {DIM}{desc}{RST}")
+
     print(f"{DIM}{'-' * W}{RST}")
-    print(f"  {CYN}A/Ctl{RST} tap=A hold=Ctrl (HRM)   {BGRN}Bsp/LOW{RST} tap=Bsp hold=layer")
-    print(f"  {DIM}___{RST} transparent   {DIM}{RED}---{RST} blocked   Boot=flash   Sup=Super")
-    print(f"  MB1-5=mouse btns   Slw/Med=mouse accel   CpWd=caps word")
     print(f"{DIM}  q to close{RST}")
 
     # Keep window open until user dismisses
