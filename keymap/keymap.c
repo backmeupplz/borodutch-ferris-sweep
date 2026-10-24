@@ -86,3 +86,9 @@ uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
             return TAPPING_TERM;
     }
 }
+
+// --- Per-key hold-on-other-key-press --------------------------------
+bool get_hold_on_other_key_press(uint16_t keycode, keyrecord_t *record) {
+    // Layer-taps (thumbs) activate immediately; HRMs keep default
+    return IS_QK_LAYER_TAP(keycode);
+}

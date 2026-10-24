@@ -17,4 +17,5 @@
 // DO NOT enable PERMISSIVE_HOLD globally — causes misfires on key rolls
 
 // Split serial pin for the GP0 rewire
+#undef SERIAL_USART_TX_PIN
 #define SERIAL_USART_TX_PIN GP0

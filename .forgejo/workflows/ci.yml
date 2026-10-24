@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    # Our own PRs and pushes run on the Mac runners; outsiders' PRs (AGit via the github bot) on Linux
+    runs-on: ${{ (github.event_name != 'pull_request' || contains(fromJSON('["backmeupplz","renovate","claude"]'), github.event.pull_request.user.login)) && 'macos-latest' || 'ubuntu-latest' }}
+    timeout-minutes: 5
+    steps:
+      # Not the qmk_firmware submodule: the firmware is only built by `./sweep flash`
+      - uses: actions/checkout@v4
+      - run: python3 -m py_compile sweep && python3 -c 'import json; json.load(open("layout.json"))'
+      - run: ./sweep list > /dev/null && ./sweep show > /dev/null && ./sweep combos > /dev/null
+      # The keymap/ files are generated from layout.json and must be committed up to date
+      - run: ./sweep generate && git diff --exit-code -- keymap
